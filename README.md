@@ -1,4 +1,21 @@
-# 清潔劑目錄 — Supabase 版
+# 酒店後勤系統 (boh)
+
+酒店後勤物料與設備管理系統。GitHub Pages 部署，Supabase 後端。
+- **repo**：`github.com/Build-0/boh` → 網址 `build-0.github.io/boh/`
+- **與 hqms（房務品質）分開**：獨立的 GitHub repo 與獨立的 Supabase 專案，互不影響。
+
+## 模組
+
+| 模組 | 內容 | 狀態 |
+|------|------|------|
+| 清潔劑目錄 | 名稱、庫存、停用/啟用（本 README 以下說明） | ✅ 完成 |
+| 吸塵機保養 | 型號、樓層代號、保養記錄 | 規劃中 |
+| 配件更換 | 型號、更換記錄 | 規劃中 |
+| 工具 | 清單、借還 | 規劃中 |
+
+---
+
+## 清潔劑目錄模組 — Supabase 版
 
 把原本用 Google Sheet + Apps Script 的庫存管理，改成 Supabase。
 
