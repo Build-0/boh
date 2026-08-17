@@ -236,5 +236,5 @@ grant execute on function delete_product(text, int)        to anon, authenticate
 --  (Run again anytime to change the password.)
 -- ---------------------------------------------------------------------------
 insert into app_config (key, value)
-values ('admin_password_hash', crypt('CHANGE_ME_NOW', gen_salt('bf')))
+values ('admin_password_hash', crypt('Mypassword2026', gen_salt('bf')))
 on conflict (key) do update set value = excluded.value;
