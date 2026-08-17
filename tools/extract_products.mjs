@@ -1,0 +1,156 @@
+// Extract products + categories from the legacy static HTML catalog.
+// Usage: node extract_products.mjs
+// Outputs: products_seed.json  (full data incl. base64 images)
+//          seed.sql            (INSERT statements for Supabase)
+
+import fs from "node:fs";
+import path from "node:path";
+
+const SRC = path.resolve("C:/Users/user/Downloads/mnt_cleaning_catalog_v3.html");
+const html = fs.readFileSync(SRC, "utf8");
+
+// Actual live stock per product id (supplied by the user, 2026-08-17).
+const STOCK = {
+  1: 0, 2: 4, 3: 15, 4: 432, 5: 12, 6: 56, 7: 9, 8: 1, 9: 1, 10: 1,
+  11: 1, 12: 1, 13: 1, 14: 1, 15: 1, 16: 7, 17: 7, 18: 1, 19: 1, 20: 40,
+  21: 5, 22: 23, 23: 14, 24: 1, 25: 24, 26: 1, 27: 1, 28: 3, 29: 4, 30: 1,
+  31: 1, 32: 17, 33: 8, 34: 216,
+};
+
+// ---- helpers ---------------------------------------------------------------
+const body = html.slice(html.indexOf("</head>"));
+
+function attr(fragment, name) {
+  const m = fragment.match(new RegExp(name + '="([^"]*)"'));
+  return m ? m[1] : null;
+}
+// Grab data-zh / data-en of the first element whose class matches `cls`.
+function pairByClass(fragment, cls) {
+  const re = new RegExp('class="' + cls + '"[^>]*data-zh="([^"]*)"[^>]*data-en="([^"]*)"');
+  const m = fragment.match(re);
+  return m ? { zh: m[1], en: m[2] } : { zh: null, en: null };
+}
+
+// ---- 1. categories (section order defines product grouping) -----------------
+const categories = [];
+const sectionChunks = body.split('class="category-section"').slice(1);
+
+sectionChunks.forEach((chunk, idx) => {
+  const header = chunk.slice(0, chunk.indexOf('class="products-grid"') + 1);
+  const borderColor = (header.match(/border-left:\s*\d+px solid (#[0-9A-Fa-f]{3,6})/) || [])[1] || null;
+  const bg = (header.match(/background:\s*(#[0-9A-Fa-f]{3,6})/) || [])[1] || null;
+  const icon = (header.match(/class="cat-icon"[^>]*>([^<]+)</) || [])[1]?.trim() || null;
+  const name = pairByClass(header, "cat-title[^\"]*"); // fallback below
+  const h2 = header.match(/<h2[^>]*data-zh="([^"]*)"[^>]*data-en="([^"]*)"/);
+  categories.push({
+    id: idx + 1,
+    icon,
+    name_zh: h2 ? h2[1] : null,
+    name_en: h2 ? h2[2] : null,
+    color: borderColor,
+    bg,
+    sort_order: idx + 1,
+  });
+});
+
+// ---- 2. products -----------------------------------------------------------
+const products = [];
+// Split whole body by product-card marker so base64 image is preserved.
+const cardChunks = body.split('class="product-card" data-id="').slice(1);
+
+// Map each card to its category by locating card position within section chunks.
+// Simpler: re-scan sections and collect ids in order.
+const sectionForCard = {};
+sectionChunks.forEach((chunk, idx) => {
+  const ids = [...chunk.matchAll(/class="product-card" data-id="(\d+)"/g)].map((m) => Number(m[1]));
+  ids.forEach((id) => (sectionForCard[id] = idx + 1));
+});
+
+cardChunks.forEach((chunk) => {
+  const id = Number(chunk.slice(0, chunk.indexOf('"')));
+  const name = pairByClass(chunk, "product-name");
+  const subname = pairByClass(chunk, "product-name-sub");
+  const img = attr(chunk, "src");
+  const alt = attr(chunk, "alt");
+
+  // three detail rows in fixed order: applicable, dilution, rinse.
+  // For applicable/dilution the data-zh/data-en live on the <td> attributes;
+  // for rinse they live on an inner <span>. Capture both attrs and inner html.
+  const dtCells = [...chunk.matchAll(/class="dt-value"([^>]*)>([\s\S]*?)<\/td>/g)].map((m) => ({
+    attrs: m[1],
+    inner: m[2],
+  }));
+  function valuePair(cell) {
+    if (!cell) return { zh: null, en: null };
+    // prefer the td's own attributes, else look inside (rinse span)
+    let m = cell.attrs.match(/data-zh="([^"]*)"[^>]*data-en="([^"]*)"/);
+    if (!m) m = cell.inner.match(/data-zh="([^"]*)"[^>]*data-en="([^"]*)"/);
+    if (m) return { zh: m[1], en: m[2] };
+    return { zh: cell.inner.replace(/<[^>]+>/g, "").trim() || null, en: null };
+  }
+  const dtValues = dtCells;
+  const applicable = valuePair(dtValues[0]);
+  const dilution = valuePair(dtValues[1]);
+  const rinse = valuePair(dtValues[2]);
+
+  products.push({
+    id,
+    category_id: sectionForCard[id] || null,
+    name_zh: name.zh,
+    name_en: name.en,
+    subname_zh: subname.zh,
+    subname_en: subname.en,
+    applicable_zh: applicable.zh,
+    applicable_en: applicable.en,
+    dilution_zh: dilution.zh,
+    dilution_en: dilution.en,
+    rinse_zh: rinse.zh,
+    rinse_en: rinse.en,
+    image: img,
+    alt,
+    stock: STOCK[id] != null ? STOCK[id] : 0, // live stock supplied by user
+    status: "啟用", // default active
+    sort_order: id,
+  });
+});
+
+products.sort((a, b) => a.id - b.id);
+
+// ---- 3. write outputs ------------------------------------------------------
+fs.writeFileSync("products_seed.json", JSON.stringify({ categories, products }, null, 2), "utf8");
+
+// SQL escaping
+const q = (v) => (v === null || v === undefined ? "NULL" : "'" + String(v).replace(/'/g, "''") + "'");
+const n = (v) => (v === null || v === undefined ? "NULL" : Number(v));
+
+let sql = "-- Seed data generated by extract_products.mjs\n";
+sql += "-- Categories\n";
+sql += "insert into categories (id, icon, name_zh, name_en, color, bg, sort_order) values\n";
+sql += categories
+  .map((c) => `  (${c.id}, ${q(c.icon)}, ${q(c.name_zh)}, ${q(c.name_en)}, ${q(c.color)}, ${q(c.bg)}, ${c.sort_order})`)
+  .join(",\n");
+sql += "\non conflict (id) do nothing;\n\n";
+
+sql += "-- Products\n";
+sql += "insert into products (id, category_id, name_zh, name_en, subname_zh, subname_en, applicable_zh, applicable_en, dilution_zh, dilution_en, rinse_zh, rinse_en, image, alt, stock, status, sort_order) values\n";
+sql += products
+  .map(
+    (p) =>
+      `  (${p.id}, ${n(p.category_id)}, ${q(p.name_zh)}, ${q(p.name_en)}, ${q(p.subname_zh)}, ${q(p.subname_en)}, ${q(p.applicable_zh)}, ${q(p.applicable_en)}, ${q(p.dilution_zh)}, ${q(p.dilution_en)}, ${q(p.rinse_zh)}, ${q(p.rinse_en)}, ${q(p.image)}, ${q(p.alt)}, ${n(p.stock)}, ${q(p.status)}, ${n(p.sort_order)})`
+  )
+  .join(",\n");
+sql += "\non conflict (id) do nothing;\n\n";
+sql += "select setval(pg_get_serial_sequence('products','id'), (select max(id) from products));\n";
+sql += "select setval(pg_get_serial_sequence('categories','id'), (select max(id) from categories));\n";
+
+fs.writeFileSync("seed.sql", sql, "utf8");
+
+// ---- report ----------------------------------------------------------------
+console.log("Categories:", categories.length);
+categories.forEach((c) => console.log(`  #${c.id} ${c.icon} ${c.name_zh} / ${c.name_en}  color=${c.color}`));
+console.log("Products:", products.length);
+const missing = products.filter((p) => !p.name_zh || !p.image || !p.category_id);
+console.log("Products with missing name/image/category:", missing.length, missing.map((m) => m.id));
+const imgBytes = products.reduce((s, p) => s + (p.image ? p.image.length : 0), 0);
+console.log("Total image payload (chars):", imgBytes, "~", Math.round(imgBytes / 1024), "KB");
+console.log("Wrote products_seed.json and seed.sql");

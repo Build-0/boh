@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>清潔劑類目錄 Chemical Product Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:#2c3e50; }
+
+.page-header { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); color:white; padding:32px 24px 26px; text-align:center; position:relative; }
+.page-header h1 { font-size:28px; font-weight:700; margin-bottom:4px; }
+.page-header .sub { font-size:13px; opacity:0.6; }
+
+/* Language toggle */
+.lang-toggle { position:absolute; top:16px; right:20px; display:flex; border-radius:8px; overflow:hidden; border:2px solid rgba(255,255,255,0.3); }
+.lang-btn { padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:transparent; color:rgba(255,255,255,0.6); font-family:inherit; transition:all 0.2s; }
+.lang-btn.active { background:rgba(255,255,255,0.2); color:white; }
+.lang-btn:hover { color:white; }
+
+.nav-bar { background:white; border-bottom:1px solid #e0e0e0; padding:12px 20px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+.nav-item { text-decoration:none; color:#555; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:500; transition:all 0.2s; border:2px solid #e8e8e8; display:flex; align-items:center; gap:6px; }
+.nav-item:hover { background:var(--cat-color); color:white; border-color:var(--cat-color); }
+.nav-count { background:rgba(0,0,0,0.08); padding:1px 7px; border-radius:10px; font-size:11px; }
+.nav-item:hover .nav-count { background:rgba(255,255,255,0.3); }
+
+.container { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+.category-section { margin-bottom:40px; }
+.category-header { padding:18px 24px; border-radius:12px; margin-bottom:20px; }
+.cat-title { display:flex; align-items:center; gap:14px; }
+.cat-icon { font-size:32px; }
+.cat-title h2 { font-size:22px; font-weight:700; margin-bottom:2px; }
+.cat-subtitle { font-size:13px; color:#888; }
+
+.products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+.product-card { background:white; border-radius:12px; border:1px solid #e8e8e8; overflow:hidden; display:flex; transition:all 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.product-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+.product-img { width:110px; min-height:120px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#fafafa; border-right:1px solid #f0f0f0; padding:8px; }
+.product-img img { max-width:100%; max-height:100px; object-fit:contain; border-radius:6px; }
+.no-img { font-size:36px; opacity:0.2; }
+.product-info { flex:1; padding:12px 14px; display:flex; flex-direction:column; }
+.info-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
+.product-name { font-size:13px; font-weight:600; color:#2c3e50; line-height:1.3; margin-bottom:1px; }
+.product-name-sub { font-size:11px; color:#95a5a6; line-height:1.3; }
+
+.stock-area { text-align:center; flex-shrink:0; }
+.stock-badge { display:inline-block; min-width:36px; padding:4px 10px; border-radius:10px; font-size:16px; font-weight:700; text-align:center; transition:all 0.3s; }
+.stock-label { font-size:10px; color:#aaa; margin-top:2px; }
+.stock-loading { background:#f0f0f0; color:#bbb; }
+.stock-ok { background:#E8F5E9; color:#2E7D32; }
+.stock-low { background:#FFF8E1; color:#F57F17; }
+.stock-out { background:#FFEBEE; color:#C62828; }
+.stock-err { background:#f0f0f0; color:#ccc; font-size:11px; }
+
+.product-card { position:relative; }
+.product-card.disabled { opacity:0.5; }
+.product-card.disabled .product-img img { filter:grayscale(100%); }
+.disabled-badge { display:none; position:absolute; top:8px; left:8px; background:#E74C3C; color:white; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; z-index:10; letter-spacing:0.5px; }
+.product-card.disabled .disabled-badge { display:block; }
+.status-row { display:none; margin-top:8px; padding-top:8px; border-top:1px dashed #e0e0e0; gap:6px; align-items:center; }
+.state-pill { font-size:10px; font-weight:700; padding:3px 9px; border-radius:6px; margin-right:2px; }
+.state-on { background:#E8F5E9; color:#2E7D32; }
+.state-off { background:#f0f0f0; color:#95a5a6; }
+/* toggle button shows the ACTION that will happen on click */
+.toggle-btn { padding:3px 10px; border:1.5px solid #E74C3C; border-radius:4px; background:transparent; color:#E74C3C; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+.toggle-btn:hover { opacity:0.7; }
+.toggle-btn.enable { border-color:#27AE60; color:#27AE60; }   /* click -> 啟用 */
+.toggle-btn.disable { border-color:#E74C3C; color:#E74C3C; }  /* click -> 停用 */
+.edit-btn { padding:3px 8px; border:1.5px solid #3498DB; border-radius:4px; background:transparent; color:#3498DB; font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; }
+.edit-btn:hover { opacity:0.7; }
+.del-btn { padding:3px 8px; border:1.5px solid #95a5a6; border-radius:4px; background:transparent; color:#95a5a6; font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; }
+.del-btn:hover { border-color:#E74C3C; color:#E74C3C; }
+
+.detail-table { width:100%; border-collapse:collapse; margin-top:auto; }
+.detail-table td { padding:3px 0; font-size:11px; vertical-align:middle; }
+.dt-label { color:#95a5a6; width:65px; font-weight:500; }
+.dt-value { color:#34495e; font-weight:500; }
+.rinse-yes { background:#FFF3E0; color:#E65100; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:600; }
+.rinse-no { background:#E8F5E9; color:#2E7D32; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:600; }
+.note { margin-top:6px; font-size:10px; color:#C0392B; background:#FDEDEC; padding:3px 6px; border-radius:6px; }
+
+.stock-edit { display:none; align-items:center; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed #e0e0e0; }
+.adj-btn { width:28px; height:28px; border:1px solid #ddd; border-radius:6px; background:white; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.adj-btn:hover { background:#3498DB; color:white; border-color:#3498DB; }
+.stock-input { width:55px; height:28px; text-align:center; border:1px solid #ddd; border-radius:6px; font-size:14px; font-weight:600; font-family:inherit; }
+.stock-input:focus { outline:none; border-color:#3498DB; }
+.save-btn { padding:4px 12px; height:28px; border:none; border-radius:6px; background:#27AE60; color:white; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+.save-btn:hover { background:#219A52; }
+.save-btn.saving { background:#95a5a6; cursor:wait; }
+.save-btn.saved { background:#2ECC71; }
+.save-btn.error { background:#E74C3C; }
+
+.admin-fab { position:fixed; bottom:24px; right:24px; padding:12px 22px; border:none; border-radius:30px; font-size:15px; font-weight:600; cursor:pointer; z-index:200; transition:all 0.3s; box-shadow:0 4px 16px rgba(0,0,0,0.2); font-family:inherit; }
+.admin-fab.locked { background:#2c3e50; color:white; }
+.admin-fab.unlocked { background:#27AE60; color:white; }
+.admin-fab:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,0,0,0.3); }
+.add-fab { position:fixed; bottom:24px; right:150px; padding:12px 22px; border:none; border-radius:30px; font-size:15px; font-weight:600; cursor:pointer; z-index:200; background:#3498DB; color:white; box-shadow:0 4px 16px rgba(0,0,0,0.2); font-family:inherit; display:none; }
+.add-fab:hover { transform:translateY(-2px); }
+
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; justify-content:center; align-items:center; }
+.modal-overlay.show { display:flex; }
+.modal-box { background:white; border-radius:16px; padding:32px; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+.modal-box h3 { font-size:20px; margin-bottom:6px; }
+.modal-box .modal-sub { font-size:13px; color:#888; margin-bottom:20px; }
+.modal-box input, .modal-box select { width:100%; padding:12px 16px; border:2px solid #e0e0e0; border-radius:10px; font-size:15px; font-family:inherit; margin-bottom:12px; background:white; }
+.modal-box input:focus, .modal-box select:focus { outline:none; border-color:#3498DB; }
+.modal-btns { display:flex; gap:10px; }
+.modal-btns button { flex:1; padding:10px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.btn-login { background:#2c3e50; color:white; }
+.btn-login:hover { background:#1a252f; }
+.btn-cancel { background:#f0f0f0; color:#666; }
+.btn-cancel:hover { background:#e0e0e0; }
+.modal-error { color:#E74C3C; font-size:13px; margin-top:10px; display:none; }
+
+/* Product add/edit modal */
+.form-modal { max-width:520px; max-height:90vh; overflow-y:auto; }
+.form-modal .row2 { display:flex; gap:10px; }
+.form-modal .row2 > div { flex:1; }
+.form-modal label { display:block; font-size:12px; font-weight:600; color:#7f8c8d; margin-bottom:4px; }
+.form-modal .img-preview { width:100%; height:120px; border:2px dashed #e0e0e0; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; background:#fafafa; overflow:hidden; }
+.form-modal .img-preview img { max-width:100%; max-height:100%; object-fit:contain; }
+
+.status-bar { display:none; background:#27AE60; color:white; text-align:center; padding:8px; font-size:13px; font-weight:500; }
+.status-bar.show { display:block; }
+
+.page-footer { text-align:center; padding:20px; color:#aaa; font-size:12px; border-top:1px solid #e8e8e8; margin-top:20px; }
+.loading-hint { text-align:center; padding:60px 20px; color:#aaa; font-size:15px; }
+
+@media (max-width:700px) {
+  .page-header h1 { font-size:22px; }
+  .products-grid { grid-template-columns:1fr; }
+  .nav-bar { gap:6px; padding:10px 12px; }
+  .nav-item { font-size:12px; padding:6px 12px; }
+  .container { padding:16px 12px 40px; }
+  .product-img { width:90px; }
+  .admin-fab { bottom:16px; right:16px; padding:10px 18px; font-size:13px; }
+  .add-fab { bottom:16px; right:130px; padding:10px 18px; font-size:13px; }
+  .lang-toggle { top:10px; right:10px; }
+  .lang-btn { padding:4px 10px; font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1 data-zh="清潔劑類目錄" data-en="Chemical Product Catalog">清潔劑類目錄</h1>
+  <div class="sub" id="headerSub" data-zh="Chemical Product Catalog" data-en="Chemical Product Catalog">Chemical Product Catalog</div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
+    <button class="lang-btn" id="btnEn" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<div class="status-bar" id="statusBar" data-zh="已登入管理員模式 — 可修改庫存與產品" data-en="Admin mode — You can edit stock and products">已登入管理員模式 — 可修改庫存與產品</div>
+
+<nav class="nav-bar" id="navBar"></nav>
+
+<div class="container" id="container">
+  <div class="loading-hint" data-zh="載入中…" data-en="Loading…">載入中…</div>
+</div>
+
+<div class="page-footer" data-zh="清潔劑庫存目錄 · Supabase" data-en="Cleaning Catalog · Supabase">清潔劑庫存目錄 · Supabase</div>
+
+<button class="add-fab" id="addFab" onclick="openProductForm()"><span data-zh="＋ 新增產品" data-en="＋ Add product">＋ 新增產品</span></button>
+<button class="admin-fab locked" id="adminFab" onclick="toggleAdmin()"><span data-zh="🔒 管理員" data-en="🔒 Admin">🔒 管理員</span></button>
+
+<!-- Login modal -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <h3 data-zh="🔒 管理員登入" data-en="🔒 Admin Login">🔒 管理員登入</h3>
+    <div class="modal-sub" data-zh="輸入密碼後可修改庫存與產品" data-en="Enter password to edit stock and products">輸入密碼後可修改庫存與產品</div>
+    <input type="password" id="pwdInput" data-zh-placeholder="請輸入密碼" data-en-placeholder="Enter password" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" onclick="doLogin()" data-zh="登入" data-en="Login">登入</button>
+    </div>
+    <div class="modal-error" id="modalError" data-zh="密碼錯誤，請重試" data-en="Wrong password, please try again">密碼錯誤，請重試</div>
+  </div>
+</div>
+
+<!-- Product add/edit modal -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal-box form-modal">
+    <h3 id="pmTitle" data-zh="新增產品" data-en="Add product">新增產品</h3>
+    <div class="modal-sub" data-zh="填寫產品資料" data-en="Fill in product details">填寫產品資料</div>
+
+    <label data-zh="類別" data-en="Category">類別</label>
+    <select id="pfCategory"></select>
+
+    <div class="row2">
+      <div><label data-zh="名稱（中）" data-en="Name (ZH)">名稱（中）</label><input id="pfNameZh"></div>
+      <div><label data-zh="名稱（英）" data-en="Name (EN)">名稱（英）</label><input id="pfNameEn"></div>
+    </div>
+
+    <label data-zh="圖片" data-en="Image">圖片</label>
+    <div class="img-preview" id="pfImgPreview"><span class="no-img">🧴</span></div>
+    <input type="file" id="pfImgFile" accept="image/*" onchange="onPickImage(event)">
+
+    <div class="row2">
+      <div><label data-zh="適用範圍（中）" data-en="Applicable (ZH)">適用範圍（中）</label><input id="pfAppZh"></div>
+      <div><label data-zh="適用範圍（英）" data-en="Applicable (EN)">適用範圍（英）</label><input id="pfAppEn"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="兌水比例（中）" data-en="Dilution (ZH)">兌水比例（中）</label><input id="pfDilZh"></div>
+      <div><label data-zh="兌水比例（英）" data-en="Dilution (EN)">兌水比例（英）</label><input id="pfDilEn"></div>
+    </div>
+    <div class="row2">
+      <div>
+        <label data-zh="需要過水" data-en="Rinse">需要過水</label>
+        <select id="pfRinse">
+          <option value="no" data-zh="不需要" data-en="Not required">不需要</option>
+          <option value="yes" data-zh="需要" data-en="Required">需要</option>
+        </select>
+      </div>
+      <div><label data-zh="初始庫存" data-en="Stock">初始庫存</label><input type="number" id="pfStock" min="0" value="0"></div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeProductForm()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="pfSaveBtn" onclick="saveProductForm()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="pfError">Error</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================================
+//  CONFIG — fill these in with your own Supabase project values
+//  Dashboard → Project Settings → Data API / API Keys
+// ============================================================================
+var SUPABASE_URL = "https://YOUR-PROJECT-ref.supabase.co";
+var SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---- state ----
+var isAdmin = false;
+var currentPwd = "";
+var currentLang = "zh";
+var categories = [];   // [{id, icon, name_zh, name_en, color, bg, sort_order}]
+var products = [];     // full rows
+var editingId = null;  // product id being edited (null = new)
+
+// ============================================================================
+//  Load + render
+// ============================================================================
+async function loadAll() {
+  var cats = await sb.from("categories").select("*").order("sort_order");
+  var prods = await sb.from("products").select("*").order("sort_order");
+  if (cats.error || prods.error) {
+    document.getElementById("container").innerHTML =
+      '<div class="loading-hint">' +
+      (currentLang === "zh" ? "無法連接資料庫，請檢查設定" : "Cannot connect to database, check config") +
+      '</div>';
+    console.error(cats.error || prods.error);
+    return;
+  }
+  categories = cats.data || [];
+  products = prods.data || [];
+  render();
+}
+
+function esc(s) {
+  return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function slug(cat) { return "cat-" + cat.id; }
+
+// --- status helpers -------------------------------------------------------
+// The pill shows the CURRENT state; the button shows the ACTION on click.
+function stateText(status, lang) {
+  if (status === "停用") return lang === "zh" ? "已停用" : "Disabled";
+  return lang === "zh" ? "上架中" : "Live";
+}
+function toggleText(status, lang) {
+  if (status === "停用") return lang === "zh" ? "▶ 啟用" : "▶ Enable"; // currently off -> enable
+  return lang === "zh" ? "■ 停用" : "■ Disable";                     // currently on  -> disable
+}
+function refreshStatusUI(id) {
+  var p = products.find(function (x) { return x.id === id; });
+  if (!p) return;
+  var card = document.querySelector('.product-card[data-id="' + id + '"]');
+  var pill = document.getElementById("statepill-" + id);
+  var btn = document.getElementById("togglebtn-" + id);
+  var disabled = p.status === "停用";
+  if (card) card.classList.toggle("disabled", disabled);
+  if (pill) { pill.textContent = stateText(p.status, currentLang); pill.className = "state-pill " + (disabled ? "state-off" : "state-on"); }
+  if (btn) { btn.textContent = toggleText(p.status, currentLang); btn.className = "toggle-btn " + (disabled ? "enable" : "disable"); }
+}
+
+function render() {
+  // header product count
+  var sub = document.getElementById("headerSub");
+  sub.setAttribute("data-zh", "Chemical Product Catalog — 共 " + products.length + " 款產品");
+  sub.setAttribute("data-en", products.length + " Products");
+
+  // nav bar
+  var nav = "";
+  categories.forEach(function (c) {
+    var count = products.filter(function (p) { return p.category_id === c.id; }).length;
+    nav +=
+      '<a href="#' + slug(c) + '" class="nav-item" style="--cat-color:' + esc(c.color) + '">' +
+      esc(c.icon) + ' <span data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' +
+      esc(c.name_zh) + '</span> <span class="nav-count">' + count + "</span></a>";
+  });
+  document.getElementById("navBar").innerHTML = nav;
+
+  // sections
+  var html = "";
+  categories.forEach(function (c) {
+    var items = products.filter(function (p) { return p.category_id === c.id; });
+    var typeWord = currentLang === "zh" ? " 種" : " types";
+    html +=
+      '<section id="' + slug(c) + '" class="category-section">' +
+      '<div class="category-header" style="border-left:5px solid ' + esc(c.color) + ";background:" + esc(c.bg) + '">' +
+      '<div class="cat-title"><span class="cat-icon">' + esc(c.icon) + "</span><div>" +
+      '<h2 data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) + "</h2>" +
+      '<span class="cat-subtitle" data-zh="' + esc(c.name_en) + " — " + items.length + ' 種" data-en="' +
+      esc(c.name_en) + " — " + items.length + ' types">' + esc(c.name_en) + " — " + items.length + typeWord +
+      "</span></div></div></div>" +
+      '<div class="products-grid">' +
+      items.map(cardHtml).join("") +
+      "</div></section>";
+  });
+  document.getElementById("container").innerHTML = html;
+
+  setLang(currentLang);
+  applyAdminVisibility();
+}
+
+function cardHtml(p) {
+  var s = Number(p.stock);
+  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var disabled = p.status === "停用";
+  var rinseYes = p.rinse_zh === "需要";
+  var img = p.image
+    ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">'
+    : '<span class="no-img">🧴</span>';
+
+  return (
+    '<div class="product-card' + (disabled ? " disabled" : "") + '" data-id="' + p.id + '">' +
+      '<div class="disabled-badge" data-zh="已停用" data-en="Disabled">已停用</div>' +
+      '<div class="product-img">' + img + "</div>" +
+      '<div class="product-info">' +
+        '<div class="info-top"><div>' +
+          '<div class="product-name" data-zh="' + esc(p.name_zh) + '" data-en="' + esc(p.name_en) + '">' + esc(p.name_zh) + "</div>" +
+          '<div class="product-name-sub" data-zh="' + esc(p.subname_zh) + '" data-en="' + esc(p.subname_en) + '">' + esc(p.subname_zh) + "</div>" +
+        "</div>" +
+        '<div class="stock-area">' +
+          '<div class="stock-badge ' + stockClass + '" id="stock-' + p.id + '">' + s + "</div>" +
+          '<div class="stock-label" data-zh="庫存" data-en="Stock">庫存</div>' +
+        "</div></div>" +
+        '<table class="detail-table">' +
+          '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td>' +
+              '<td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
+          '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td>' +
+              '<td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
+          '<tr><td class="dt-label" data-zh="需要過水" data-en="Rinse">需要過水</td><td class="dt-value">' +
+              '<span class="' + (rinseYes ? "rinse-yes" : "rinse-no") + '" data-zh="' + esc(p.rinse_zh) + '" data-en="' + esc(p.rinse_en) + '">' + esc(p.rinse_zh) + "</span>" +
+          "</td></tr>" +
+        "</table>" +
+        '<div class="stock-edit" id="edit-' + p.id + '">' +
+          '<button class="adj-btn" onclick="adjustStock(' + p.id + ',-1)">-</button>' +
+          '<input type="number" class="stock-input" id="input-' + p.id + '" min="0" value="' + s + '">' +
+          '<button class="adj-btn" onclick="adjustStock(' + p.id + ',1)">+</button>' +
+          '<button class="save-btn" id="savebtn-' + p.id + '" onclick="saveStock(' + p.id + ')" data-zh="儲存" data-en="Save">儲存</button>' +
+        "</div>" +
+        '<div class="status-row" id="srow-' + p.id + '" style="display:none">' +
+          '<span class="state-pill ' + (disabled ? "state-off" : "state-on") + '" id="statepill-' + p.id + '">' + stateText(p.status, currentLang) + "</span>" +
+          '<button class="toggle-btn ' + (disabled ? "enable" : "disable") + '" id="togglebtn-' + p.id + '" onclick="toggleStatus(' + p.id + ')">' + toggleText(p.status, currentLang) + "</button>" +
+          '<button class="edit-btn" onclick="openProductForm(' + p.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
+          '<button class="del-btn" onclick="deleteProduct(' + p.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
+        "</div>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+// ============================================================================
+//  Language toggle (reads data-zh / data-en on every element)
+// ============================================================================
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById("btnZh").className = "lang-btn" + (lang === "zh" ? " active" : "");
+  document.getElementById("btnEn").className = "lang-btn" + (lang === "en" ? " active" : "");
+  document.querySelectorAll("[data-" + lang + "]").forEach(function (el) {
+    var val = el.getAttribute("data-" + lang);
+    if (val !== null && el.children.length === 0) el.textContent = val;
+  });
+  document.querySelectorAll("[data-" + lang + "-placeholder]").forEach(function (el) {
+    el.placeholder = el.getAttribute("data-" + lang + "-placeholder");
+  });
+  // status pill + toggle action button reflect state in current language
+  products.forEach(function (p) { refreshStatusUI(p.id); });
+}
+
+// ============================================================================
+//  Admin session
+// ============================================================================
+function toggleAdmin() {
+  if (isAdmin) { logout(); return; }
+  document.getElementById("loginModal").classList.add("show");
+  document.getElementById("pwdInput").value = "";
+  document.getElementById("modalError").style.display = "none";
+  setTimeout(function () { document.getElementById("pwdInput").focus(); }, 100);
+}
+function closeModal() { document.getElementById("loginModal").classList.remove("show"); }
+
+async function doLogin() {
+  var pwd = document.getElementById("pwdInput").value;
+  if (!pwd) return;
+  var loginBtn = document.querySelector("#loginModal .btn-login");
+  var errEl = document.getElementById("modalError");
+  loginBtn.textContent = "...";
+  loginBtn.disabled = true;
+  errEl.style.display = "none";
+
+  var res = await sb.rpc("verify_password", { p_password: pwd });
+  loginBtn.textContent = currentLang === "zh" ? "登入" : "Login";
+  loginBtn.disabled = false;
+
+  if (!res.error && res.data === true) {
+    currentPwd = pwd;
+    isAdmin = true;
+    closeModal();
+    var fab = document.getElementById("adminFab");
+    fab.className = "admin-fab unlocked";
+    fab.querySelector("span").setAttribute("data-zh", "🔓 已登入");
+    fab.querySelector("span").setAttribute("data-en", "🔓 Logged in");
+    document.getElementById("statusBar").classList.add("show");
+    applyAdminVisibility();
+    setLang(currentLang);
+  } else if (res.error) {
+    errEl.textContent = currentLang === "zh" ? "無法連接伺服器" : "Cannot connect to server";
+    errEl.style.display = "block";
+  } else {
+    errEl.textContent = currentLang === "zh" ? "密碼錯誤，請重試" : "Wrong password, please try again";
+    errEl.style.display = "block";
+  }
+}
+
+function logout() {
+  isAdmin = false; currentPwd = "";
+  var fab = document.getElementById("adminFab");
+  fab.className = "admin-fab locked";
+  fab.querySelector("span").setAttribute("data-zh", "🔒 管理員");
+  fab.querySelector("span").setAttribute("data-en", "🔒 Admin");
+  document.getElementById("statusBar").classList.remove("show");
+  applyAdminVisibility();
+  setLang(currentLang);
+}
+
+function applyAdminVisibility() {
+  document.getElementById("addFab").style.display = isAdmin ? "block" : "none";
+  document.querySelectorAll(".stock-edit").forEach(function (el) { el.style.display = isAdmin ? "flex" : "none"; });
+  document.querySelectorAll(".status-row").forEach(function (el) { el.style.display = isAdmin ? "flex" : "none"; });
+}
+
+// ============================================================================
+//  Stock edit
+// ============================================================================
+function adjustStock(id, delta) {
+  var inp = document.getElementById("input-" + id);
+  var val = Number(inp.value) + delta;
+  if (val < 0) val = 0;
+  inp.value = val;
+}
+
+async function saveStock(id) {
+  var inp = document.getElementById("input-" + id);
+  var btn = document.getElementById("savebtn-" + id);
+  var newStock = Number(inp.value);
+  btn.textContent = "...";
+  btn.className = "save-btn saving";
+
+  var res = await sb.rpc("update_stock", { p_password: currentPwd, p_id: id, p_stock: newStock });
+  if (!res.error) {
+    btn.textContent = "OK!";
+    btn.className = "save-btn saved";
+    updateLocal(id, res.data);
+    var badge = document.getElementById("stock-" + id);
+    badge.textContent = newStock;
+    badge.className = "stock-badge " + (newStock > 5 ? "stock-ok" : newStock > 0 ? "stock-low" : "stock-out");
+  } else {
+    handleAdminError(res.error, btn);
+  }
+  setTimeout(function () {
+    btn.textContent = currentLang === "zh" ? "儲存" : "Save";
+    btn.className = "save-btn";
+  }, 2000);
+}
+
+async function toggleStatus(id) {
+  var p = products.find(function (x) { return x.id === id; });
+  var btn = document.getElementById("togglebtn-" + id);
+  var newStatus = p.status === "停用" ? "啟用" : "停用";
+  btn.textContent = "...";
+
+  var res = await sb.rpc("update_status", { p_password: currentPwd, p_id: id, p_status: newStatus });
+  if (!res.error) {
+    updateLocal(id, res.data);
+    refreshStatusUI(id);
+  } else {
+    handleAdminError(res.error, null);
+    btn.textContent = currentLang === "zh" ? "失敗" : "Failed";
+    setTimeout(function () { refreshStatusUI(id); }, 2000);
+  }
+}
+
+// ============================================================================
+//  Product add / edit / delete
+// ============================================================================
+function openProductForm(id) {
+  editingId = (id == null ? null : id);
+  fillCategorySelect();
+  var pm = document.getElementById("productModal");
+  var title = document.getElementById("pmTitle");
+  document.getElementById("pfError").style.display = "none";
+  document.getElementById("pfImgFile").value = "";
+
+  if (editingId == null) {
+    title.setAttribute("data-zh", "新增產品"); title.setAttribute("data-en", "Add product");
+    setForm({ category_id: categories[0] ? categories[0].id : null, stock: 0, rinse_zh: "不需要" });
+  } else {
+    title.setAttribute("data-zh", "編輯產品"); title.setAttribute("data-en", "Edit product");
+    setForm(products.find(function (x) { return x.id === editingId; }));
+  }
+  pm.classList.add("show");
+  setLang(currentLang);
+}
+function closeProductForm() { document.getElementById("productModal").classList.remove("show"); }
+
+function fillCategorySelect() {
+  var sel = document.getElementById("pfCategory");
+  sel.innerHTML = categories.map(function (c) {
+    return '<option value="' + c.id + '">' + esc(c.icon + " " + c.name_zh) + "</option>";
+  }).join("");
+}
+
+var pfImageData = null;
+function setForm(p) {
+  p = p || {};
+  document.getElementById("pfCategory").value = p.category_id || (categories[0] && categories[0].id) || "";
+  document.getElementById("pfNameZh").value = p.name_zh || "";
+  document.getElementById("pfNameEn").value = p.name_en || "";
+  document.getElementById("pfAppZh").value = p.applicable_zh || "";
+  document.getElementById("pfAppEn").value = p.applicable_en || "";
+  document.getElementById("pfDilZh").value = p.dilution_zh || "";
+  document.getElementById("pfDilEn").value = p.dilution_en || "";
+  document.getElementById("pfRinse").value = p.rinse_zh === "需要" ? "yes" : "no";
+  document.getElementById("pfStock").value = p.stock != null ? p.stock : 0;
+  pfImageData = p.image || null;
+  var prev = document.getElementById("pfImgPreview");
+  prev.innerHTML = pfImageData ? '<img src="' + esc(pfImageData) + '">' : '<span class="no-img">🧴</span>';
+}
+
+function onPickImage(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    pfImageData = reader.result; // data URI
+    document.getElementById("pfImgPreview").innerHTML = '<img src="' + esc(pfImageData) + '">';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProductForm() {
+  var btn = document.getElementById("pfSaveBtn");
+  var errEl = document.getElementById("pfError");
+  errEl.style.display = "none";
+  var rinseYes = document.getElementById("pfRinse").value === "yes";
+  var nameZh = document.getElementById("pfNameZh").value.trim();
+  if (!nameZh) {
+    errEl.textContent = currentLang === "zh" ? "請填寫中文名稱" : "Name (ZH) required";
+    errEl.style.display = "block";
+    return;
+  }
+  var payload = {
+    category_id: document.getElementById("pfCategory").value,
+    name_zh: nameZh,
+    name_en: document.getElementById("pfNameEn").value.trim(),
+    subname_zh: document.getElementById("pfNameEn").value.trim(),  // sub shows the other language
+    subname_en: nameZh,
+    applicable_zh: document.getElementById("pfAppZh").value.trim(),
+    applicable_en: document.getElementById("pfAppEn").value.trim(),
+    dilution_zh: document.getElementById("pfDilZh").value.trim(),
+    dilution_en: document.getElementById("pfDilEn").value.trim(),
+    rinse_zh: rinseYes ? "需要" : "不需要",
+    rinse_en: rinseYes ? "Required" : "Not required",
+    image: pfImageData,
+    alt: nameZh,
+    stock: document.getElementById("pfStock").value,
+    status: "啟用",
+    sort_order: editingId || 999,
+  };
+  if (editingId != null) payload.id = editingId;
+
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("upsert_product", { p_password: currentPwd, p_product: payload });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+
+  if (!res.error) {
+    closeProductForm();
+    await loadAll();
+  } else {
+    errEl.textContent = friendlyError(res.error);
+    errEl.style.display = "block";
+  }
+}
+
+async function deleteProduct(id) {
+  var p = products.find(function (x) { return x.id === id; });
+  var name = p ? p.name_zh : "#" + id;
+  if (!confirm((currentLang === "zh" ? "確定刪除「" : "Delete \"") + name + (currentLang === "zh" ? "」？此操作無法復原。" : "\"? This cannot be undone."))) return;
+  var res = await sb.rpc("delete_product", { p_password: currentPwd, p_id: id });
+  if (!res.error) { await loadAll(); }
+  else { alert(friendlyError(res.error)); }
+}
+
+// ============================================================================
+//  Helpers
+// ============================================================================
+function updateLocal(id, row) {
+  if (!row) return;
+  var i = products.findIndex(function (x) { return x.id === id; });
+  if (i >= 0) products[i] = row;
+}
+
+function friendlyError(err) {
+  var msg = (err && err.message) || "";
+  if (/wrong password/i.test(msg)) return currentLang === "zh" ? "密碼錯誤" : "Wrong password";
+  if (/not configured/i.test(msg)) return currentLang === "zh" ? "尚未設定密碼" : "Password not set";
+  return currentLang === "zh" ? "操作失敗：" + msg : "Failed: " + msg;
+}
+
+function handleAdminError(err, btn) {
+  if (btn) { btn.textContent = currentLang === "zh" ? "失敗" : "Failed"; btn.className = "save-btn error"; }
+  if (/wrong password/i.test((err && err.message) || "")) {
+    logout();
+    document.getElementById("loginModal").classList.add("show");
+    document.getElementById("modalError").textContent = currentLang === "zh" ? "密碼已失效，請重新登入" : "Session expired, please log in again";
+    document.getElementById("modalError").style.display = "block";
+  }
+}
+
+window.onload = loadAll;
+</script>
+</body>
+</html>
