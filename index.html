@@ -204,6 +204,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')">🧴 <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
   <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
   <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
+  <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
 </div>
 
 <div class="container" id="container">
@@ -352,6 +353,48 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   </div>
 </div>
 
+<!-- Equipment add/edit modal -->
+<div class="modal-overlay" id="equipModal">
+  <div class="modal-box form-modal">
+    <h3 id="emTitle" data-zh="新增設備" data-en="Add equipment">新增設備</h3>
+    <div class="modal-sub" data-zh="每台獨立管理" data-en="Tracked individually">每台獨立管理</div>
+
+    <div class="row2">
+      <div>
+        <label data-zh="類型" data-en="Type">類型</label>
+        <input id="efType" list="equipTypes" data-zh-placeholder="保險箱 / 空氣淨化機 / 除濕機…" data-en-placeholder="Safe / Air purifier…">
+        <datalist id="equipTypes"></datalist>
+      </div>
+      <div><label data-zh="型號" data-en="Model">型號</label><input id="efModel"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="品牌" data-en="Brand">品牌</label><input id="efBrand"></div>
+      <div><label data-zh="樓層代號" data-en="Floor code">樓層代號</label><input id="efFloor"></div>
+    </div>
+    <div>
+      <label data-zh="狀態" data-en="Status">狀態</label>
+      <select id="efStatus">
+        <option value="正常" data-zh="正常" data-en="OK">正常</option>
+        <option value="維修中" data-zh="維修中" data-en="Repairing">維修中</option>
+        <option value="報廢" data-zh="報廢" data-en="Scrapped">報廢</option>
+      </select>
+    </div>
+
+    <label data-zh="圖片" data-en="Image">圖片</label>
+    <div class="img-preview" id="efImgPreview"><span class="no-img">🧰</span></div>
+    <input type="file" id="efImgFile" accept="image/*" onchange="onPickImage(event,'ef')">
+
+    <label data-zh="備註" data-en="Notes">備註</label>
+    <textarea id="efNotes"></textarea>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeEquipForm()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="efSaveBtn" onclick="saveEquipForm()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="efError">Error</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================================
@@ -373,13 +416,17 @@ var products = [];
 var vacuums = [];
 var vacMaint = [];
 var tools = [];
-var editProductId = null, editVacuumId = null, editToolId = null, maintVacuumId = null;
-var formImages = { pf: null, vf: null, tf: null };
+var equipment = [];
+var equipMaint = [];
+var editProductId = null, editVacuumId = null, editToolId = null, editEquipmentId = null;
+var maintKind = null, maintTargetId = null;
+var formImages = { pf: null, vf: null, tf: null, ef: null };
 
 var MODULE_ADD_LABEL = {
-  cleaning: { zh: "＋ 新增產品", en: "＋ Add product" },
-  vacuum:   { zh: "＋ 新增吸塵機", en: "＋ Add vacuum" },
-  tool:     { zh: "＋ 新增工具", en: "＋ Add tool" },
+  cleaning:  { zh: "＋ 新增產品", en: "＋ Add product" },
+  vacuum:    { zh: "＋ 新增吸塵機", en: "＋ Add vacuum" },
+  tool:      { zh: "＋ 新增工具", en: "＋ Add tool" },
+  equipment: { zh: "＋ 新增設備", en: "＋ Add equipment" },
 };
 
 // ============================================================================
@@ -405,6 +452,10 @@ async function loadAll() {
   vacMaint = m.error ? [] : (m.data || []);
   var t = await sb.from("tools").select("*").order("sort_order");
   tools = t.error ? [] : (t.data || []);
+  var e = await sb.from("equipment").select("*").order("type").order("model");
+  equipment = e.error ? [] : (e.data || []);
+  var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
+  equipMaint = em.error ? [] : (em.data || []);
   render();
 }
 
@@ -445,7 +496,8 @@ function render() {
   var html = "";
   if (currentModule === "cleaning") html = renderCleaning();
   else if (currentModule === "vacuum") html = renderVacuum();
-  else html = renderTool();
+  else if (currentModule === "tool") html = renderTool();
+  else html = renderEquipment();
   document.getElementById("container").innerHTML = html;
 
   applyLang();
@@ -669,14 +721,14 @@ function vacCard(v) {
   var maintList = records.length
     ? records.map(function (m) {
         return '<div class="maint-item"><span>' + esc(m.description) +
-          (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(' + m.id + ')">✕</button>' : "") +
+          (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(\'vacuum\',' + m.id + ')">✕</button>' : "") +
           '</span><span class="maint-date">' + esc(m.service_date) + "</span></div>";
       }).join("")
     : '<div class="maint-empty" data-zh="尚無保養記錄" data-en="No records yet">尚無保養記錄</div>';
   var admin = isAdmin ? (
     '<div class="vac-actions">' +
       '<button class="mini-btn warn" onclick="toggleVacuumStatus(' + v.id + ')" data-zh="切換狀態" data-en="Toggle">切換狀態</button>' +
-      '<button class="mini-btn" onclick="openMaintForm(' + v.id + ')" data-zh="＋ 保養" data-en="+ Maint">＋ 保養</button>' +
+      '<button class="mini-btn" onclick="openMaintForm(\'vacuum\',' + v.id + ')" data-zh="＋ 保養" data-en="+ Maint">＋ 保養</button>' +
       '<button class="mini-btn" onclick="openVacuumForm(' + v.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
       '<button class="mini-btn grey" onclick="deleteVacuum(' + v.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
     "</div>"
@@ -750,11 +802,16 @@ async function deleteVacuum(id) {
   } else adminErr(res.error);
 }
 
-// ---- maintenance ----
-function openMaintForm(vacuumId) {
-  maintVacuumId = vacuumId;
-  var v = vacuums.find(function (x) { return x.id === vacuumId; });
-  document.getElementById("mfSub").textContent = v ? v.model + (v.floor_code ? " · " + v.floor_code : "") : "";
+// ---- maintenance (shared by vacuum + equipment) ----
+function openMaintForm(kind, id) {
+  maintKind = kind; maintTargetId = id;
+  var item = (kind === "vacuum" ? vacuums : equipment).find(function (x) { return x.id === id; });
+  var sub = "";
+  if (item) {
+    var head = kind === "equipment" ? (item.type + (item.model ? " · " + item.model : "")) : item.model;
+    sub = head + (item.floor_code ? " · " + item.floor_code : "");
+  }
+  document.getElementById("mfSub").textContent = sub;
   document.getElementById("mfError").style.display = "none";
   document.getElementById("mfDate").value = new Date().toISOString().slice(0, 10);
   document.getElementById("mfDesc").value = "";
@@ -769,17 +826,22 @@ async function saveMaintForm() {
   var desc = document.getElementById("mfDesc").value.trim();
   if (!desc) { errEl.textContent = currentLang === "zh" ? "請填寫內容" : "Description required"; errEl.style.display = "block"; return; }
   btn.textContent = "..."; btn.disabled = true;
-  var res = await sb.rpc("add_vacuum_maintenance", {
-    p_password: currentPwd, p_vacuum_id: maintVacuumId,
-    p_date: document.getElementById("mfDate").value || null, p_description: desc,
-  });
+  var fn = maintKind === "vacuum" ? "add_vacuum_maintenance" : "add_equipment_maintenance";
+  var args = { p_password: currentPwd, p_date: document.getElementById("mfDate").value || null, p_description: desc };
+  if (maintKind === "vacuum") args.p_vacuum_id = maintTargetId; else args.p_equipment_id = maintTargetId;
+  var res = await sb.rpc(fn, args);
   btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
-  if (!res.error) { vacMaint.unshift(res.data); closeMaintForm(); render(); }
+  if (!res.error) { (maintKind === "vacuum" ? vacMaint : equipMaint).unshift(res.data); closeMaintForm(); render(); }
   else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
 }
-async function deleteMaint(id) {
-  var res = await sb.rpc("delete_vacuum_maintenance", { p_password: currentPwd, p_id: id });
-  if (!res.error) { vacMaint = vacMaint.filter(function (m) { return m.id !== id; }); render(); } else adminErr(res.error);
+async function deleteMaint(kind, id) {
+  var fn = kind === "vacuum" ? "delete_vacuum_maintenance" : "delete_equipment_maintenance";
+  var res = await sb.rpc(fn, { p_password: currentPwd, p_id: id });
+  if (!res.error) {
+    if (kind === "vacuum") vacMaint = vacMaint.filter(function (m) { return m.id !== id; });
+    else equipMaint = equipMaint.filter(function (m) { return m.id !== id; });
+    render();
+  } else adminErr(res.error);
 }
 
 // ============================================================================
@@ -884,12 +946,135 @@ async function deleteTool(id) {
 }
 
 // ============================================================================
+//  Module 4 — Equipment (per-unit, grouped by type, with maintenance)
+// ============================================================================
+function renderEquipment() {
+  if (!equipment.length) return emptyState("🧰", "尚無設備，登入後可新增", "No equipment yet");
+  var groups = {};
+  equipment.forEach(function (e) {
+    var ty = e.type && e.type.trim() ? e.type : (currentLang === "zh" ? "其他" : "Other");
+    (groups[ty] = groups[ty] || []).push(e);
+  });
+  var types = Object.keys(groups).sort();
+  var repairing = equipment.filter(function (e) { return e.status === "維修中"; }).length;
+  var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
+    (currentLang === "zh"
+      ? "共 " + equipment.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
+      : equipment.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
+  var html = summary;
+  types.forEach(function (ty) {
+    html += '<section class="category-section">' +
+      '<div class="category-header" style="border-left:5px solid #7D3C98;background:#F5EEF8">' +
+      '<div class="cat-title"><span class="cat-icon">🧰</span><div><h2>' + esc(ty) + "</h2>" +
+      '<span class="cat-subtitle">' + groups[ty].length + (currentLang === "zh" ? " 台" : " units") + "</span></div></div></div>" +
+      '<div class="vac-grid">' + groups[ty].map(equipCard).join("") + "</div></section>";
+  });
+  return html;
+}
+function equipCard(e) {
+  var img = e.image ? '<img src="' + esc(e.image) + '">' : '<span class="no-img">🧰</span>';
+  var st = e.status;
+  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
+  var records = equipMaint.filter(function (m) { return m.equipment_id === e.id; });
+  var maintList = records.length
+    ? records.map(function (m) {
+        return '<div class="maint-item"><span>' + esc(m.description) +
+          (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(\'equipment\',' + m.id + ')">✕</button>' : "") +
+          '</span><span class="maint-date">' + esc(m.service_date) + "</span></div>";
+      }).join("")
+    : '<div class="maint-empty" data-zh="尚無保養記錄" data-en="No records yet">尚無保養記錄</div>';
+  var admin = isAdmin ? (
+    '<div class="vac-actions">' +
+      '<button class="mini-btn warn" onclick="toggleEquipmentStatus(' + e.id + ')" data-zh="切換狀態" data-en="Toggle">切換狀態</button>' +
+      '<button class="mini-btn" onclick="openMaintForm(\'equipment\',' + e.id + ')" data-zh="＋ 保養" data-en="+ Maint">＋ 保養</button>' +
+      '<button class="mini-btn" onclick="openEquipmentForm(' + e.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
+      '<button class="mini-btn grey" onclick="deleteEquipment(' + e.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
+    "</div>"
+  ) : "";
+  var titleLine = (e.model && e.model.trim()) ? e.model : e.type;
+  return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
+    '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
+    '<div class="vac-head"><div class="vac-model">' + esc(titleLine) + "</div>" +
+    (e.brand ? '<div class="vac-brand">' + esc(e.brand) + "</div>" : "") +
+    '<div class="vac-badges">' +
+      (e.floor_code ? '<span class="floor-badge">' + esc(e.floor_code) + "</span>" : "") +
+      '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
+    "</div></div></div>" +
+    (e.notes ? '<div class="vac-notes">' + esc(e.notes) + "</div>" : "") +
+    '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+    admin + "</div>";
+}
+async function toggleEquipmentStatus(id) {
+  var e = equipment.find(function (x) { return x.id === id; });
+  var next = e.status === "正常" ? "維修中" : "正常";
+  var res = await sb.rpc("update_equipment_status", { p_password: currentPwd, p_id: id, p_status: next });
+  if (!res.error) { replaceLocal(equipment, res.data); render(); } else adminErr(res.error);
+}
+function openEquipmentForm(id) {
+  editEquipmentId = (id == null ? null : id);
+  document.getElementById("efError").style.display = "none";
+  document.getElementById("efImgFile").value = "";
+  var typeSet = {};
+  ["保險箱", "空氣淨化機", "除濕機"].forEach(function (t) { typeSet[t] = 1; });
+  equipment.forEach(function (x) { if (x.type) typeSet[x.type] = 1; });
+  document.getElementById("equipTypes").innerHTML = Object.keys(typeSet).map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
+  var title = document.getElementById("emTitle");
+  var e = editEquipmentId == null ? { status: "正常", type: "" } : equipment.find(function (x) { return x.id === editEquipmentId; });
+  title.setAttribute("data-zh", editEquipmentId == null ? "新增設備" : "編輯設備");
+  title.setAttribute("data-en", editEquipmentId == null ? "Add equipment" : "Edit equipment");
+  document.getElementById("efType").value = e.type || "";
+  document.getElementById("efModel").value = e.model || "";
+  document.getElementById("efBrand").value = e.brand || "";
+  document.getElementById("efFloor").value = e.floor_code || "";
+  document.getElementById("efStatus").value = e.status || "正常";
+  document.getElementById("efNotes").value = e.notes || "";
+  formImages.ef = e.image || null;
+  document.getElementById("efImgPreview").innerHTML = formImages.ef ? '<img src="' + esc(formImages.ef) + '">' : '<span class="no-img">🧰</span>';
+  document.getElementById("equipModal").classList.add("show");
+  applyLang();
+}
+function closeEquipForm() { document.getElementById("equipModal").classList.remove("show"); }
+async function saveEquipForm() {
+  var btn = document.getElementById("efSaveBtn");
+  var errEl = document.getElementById("efError");
+  errEl.style.display = "none";
+  var type = document.getElementById("efType").value.trim();
+  if (!type) { errEl.textContent = currentLang === "zh" ? "請填寫類型" : "Type required"; errEl.style.display = "block"; return; }
+  var payload = {
+    type: type,
+    model: document.getElementById("efModel").value.trim(),
+    brand: document.getElementById("efBrand").value.trim(),
+    floor_code: document.getElementById("efFloor").value.trim(),
+    status: document.getElementById("efStatus").value,
+    notes: document.getElementById("efNotes").value.trim(),
+    image: formImages.ef,
+  };
+  if (editEquipmentId != null) payload.id = editEquipmentId;
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("upsert_equipment", { p_password: currentPwd, p_equipment: payload });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) { upsertLocal(equipment, res.data); closeEquipForm(); render(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+async function deleteEquipment(id) {
+  var e = equipment.find(function (x) { return x.id === id; });
+  if (!confirm((currentLang === "zh" ? "確定刪除設備「" : 'Delete "') + (e ? (e.type + (e.model ? " " + e.model : "")) : id) + (currentLang === "zh" ? "」？保養記錄也會一併刪除。" : '"? Maintenance records will also be deleted.'))) return;
+  var res = await sb.rpc("delete_equipment", { p_password: currentPwd, p_id: id });
+  if (!res.error) {
+    equipment = equipment.filter(function (x) { return x.id !== id; });
+    equipMaint = equipMaint.filter(function (m) { return m.equipment_id !== id; });
+    render();
+  } else adminErr(res.error);
+}
+
+// ============================================================================
 //  Admin session
 // ============================================================================
 function openAddForModule() {
   if (currentModule === "cleaning") openProductForm();
   else if (currentModule === "vacuum") openVacuumForm();
-  else openToolForm();
+  else if (currentModule === "tool") openToolForm();
+  else openEquipmentForm();
 }
 function toggleAdmin() { if (isAdmin) { logout(); return; } openLogin(); }
 function openLogin() {

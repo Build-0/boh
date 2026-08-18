@@ -11,9 +11,13 @@
 | 清潔劑目錄 | 名稱、庫存、停用/啟用、新增/編輯/刪除 | ✅ 完成 |
 | 吸塵機 | 每台獨立（型號、樓層代號、狀態）+ 保養記錄歷史 | ✅ 完成 |
 | 清潔工具 | 庫存數量、停用/啟用、新增/編輯/刪除 | ✅ 完成 |
+| 設備 | 每台獨立（類型/型號/樓層/狀態）+ 保養記錄，按類型分組 | ✅ 完成 |
 | 配件更換 | 型號、更換記錄 | 規劃中 |
 
-> 模組 2、3 的資料表與 RPC 在 `supabase/schema_modules.sql`，在 `schema.sql` 之後執行一次即可。
+> SQL 執行順序（都在 Supabase SQL Editor 各跑一次）：
+> 1. `supabase/schema.sql`（含設定密碼）→ 2. `supabase/seed.sql`（清潔劑資料）
+> 3. `supabase/schema_modules.sql`（吸塵機＋清潔工具）
+> 4. `supabase/schema_equipment.sql`（設備）
 
 ---
 
