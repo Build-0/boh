@@ -127,9 +127,55 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 .page-footer { text-align:center; padding:20px; color:#aaa; font-size:12px; border-top:1px solid #e8e8e8; margin-top:20px; }
 .loading-hint { text-align:center; padding:60px 20px; color:#aaa; font-size:15px; }
 
+/* Module switcher */
+.module-bar { background:#fff; border-bottom:1px solid #e0e0e0; display:flex; justify-content:center; gap:8px; padding:10px 12px; position:sticky; top:0; z-index:110; box-shadow:0 2px 8px rgba(0,0,0,0.04); flex-wrap:wrap; }
+.module-btn { padding:8px 18px; border-radius:22px; border:2px solid #e8e8e8; background:#fff; font-weight:600; cursor:pointer; font-family:inherit; font-size:14px; display:flex; align-items:center; gap:6px; color:#555; transition:all 0.2s; }
+.module-btn:hover { border-color:#0f3460; }
+.module-btn.active { background:#0f3460; color:#fff; border-color:#0f3460; }
+
+/* Empty state */
+.empty-state { text-align:center; padding:50px 20px; color:#bbb; }
+.empty-state .ico { font-size:46px; opacity:0.4; display:block; margin-bottom:10px; }
+
+/* Vacuum module */
+.vac-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:16px; }
+.vac-card { background:#fff; border-radius:12px; border:1px solid #e8e8e8; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.04); transition:all 0.25s; }
+.vac-card:hover { box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+.vac-card.scrap { opacity:0.55; }
+.vac-top { display:flex; gap:12px; padding:12px 14px; }
+.vac-img { width:88px; height:88px; flex-shrink:0; border-radius:8px; background:#fafafa; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #f0f0f0; }
+.vac-img img { max-width:100%; max-height:100%; object-fit:contain; }
+.vac-head { flex:1; }
+.vac-model { font-size:15px; font-weight:700; color:#2c3e50; line-height:1.3; }
+.vac-brand { font-size:12px; color:#95a5a6; margin-top:1px; }
+.vac-badges { margin-top:6px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.floor-badge { display:inline-block; background:#EAF2F8; color:#2E86C1; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; }
+.vac-status { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; }
+.vs-ok { background:#E8F5E9; color:#2E7D32; }
+.vs-repair { background:#FFF3E0; color:#E65100; }
+.vs-scrap { background:#f0f0f0; color:#95a5a6; }
+.vac-notes { font-size:12px; color:#7f8c8d; padding:0 14px 8px; }
+.maint-box { border-top:1px dashed #e0e0e0; padding:10px 14px; }
+.maint-title { font-size:12px; font-weight:700; color:#7f8c8d; margin-bottom:6px; }
+.maint-item { font-size:12px; color:#34495e; padding:5px 0; border-bottom:1px solid #f5f5f5; display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+.maint-date { color:#95a5a6; white-space:nowrap; font-size:11px; }
+.maint-empty { font-size:12px; color:#c0c0c0; padding:3px 0; }
+.maint-del { border:none; background:none; color:#ccc; cursor:pointer; font-size:13px; line-height:1; padding:0 2px; }
+.maint-del:hover { color:#E74C3C; }
+.vac-actions { display:flex; gap:6px; padding:0 14px 12px; flex-wrap:wrap; align-items:center; }
+.mini-btn { font-size:11px; padding:3px 10px; border-radius:5px; border:1.5px solid #3498DB; background:transparent; color:#3498DB; cursor:pointer; font-family:inherit; font-weight:600; }
+.mini-btn:hover { opacity:0.7; }
+.mini-btn.warn { border-color:#E67E22; color:#E67E22; }
+.mini-btn.grey { border-color:#95a5a6; color:#95a5a6; }
+.mini-btn.grey:hover { border-color:#E74C3C; color:#E74C3C; }
+.form-modal textarea { width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:12px; resize:vertical; min-height:60px; }
+.form-modal textarea:focus { outline:none; border-color:#3498DB; }
+
 @media (max-width:700px) {
   .page-header h1 { font-size:22px; }
   .products-grid { grid-template-columns:1fr; }
+  .vac-grid { grid-template-columns:1fr; }
+  .module-btn { font-size:13px; padding:7px 14px; }
   .nav-bar { gap:6px; padding:10px 12px; }
   .nav-item { font-size:12px; padding:6px 12px; }
   .container { padding:16px 12px 40px; }
@@ -144,25 +190,29 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 <body>
 
 <div class="page-header">
-  <h1 data-zh="清潔劑類目錄" data-en="Chemical Product Catalog">清潔劑類目錄</h1>
-  <div class="sub" id="headerSub" data-zh="Chemical Product Catalog" data-en="Chemical Product Catalog">Chemical Product Catalog</div>
+  <h1 data-zh="酒店後勤系統" data-en="Hotel Back-of-House">酒店後勤系統</h1>
+  <div class="sub" id="headerSub" data-zh="物料與設備管理" data-en="Supplies & Equipment">物料與設備管理</div>
   <div class="lang-toggle">
     <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
     <button class="lang-btn" id="btnEn" onclick="setLang('en')">EN</button>
   </div>
 </div>
 
-<div class="status-bar" id="statusBar" data-zh="已登入管理員模式 — 可修改庫存與產品" data-en="Admin mode — You can edit stock and products">已登入管理員模式 — 可修改庫存與產品</div>
+<div class="status-bar" id="statusBar" data-zh="已登入管理員模式 — 可修改資料" data-en="Admin mode — You can edit data">已登入管理員模式 — 可修改資料</div>
 
-<nav class="nav-bar" id="navBar"></nav>
+<div class="module-bar" id="moduleBar">
+  <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')">🧴 <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
+  <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
+  <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
+</div>
 
 <div class="container" id="container">
   <div class="loading-hint" data-zh="載入中…" data-en="Loading…">載入中…</div>
 </div>
 
-<div class="page-footer" data-zh="酒店後勤系統 · 清潔劑目錄" data-en="Hotel Back-of-House · Cleaning Catalog">酒店後勤系統 · 清潔劑目錄</div>
+<div class="page-footer" data-zh="酒店後勤系統 · Supabase" data-en="Hotel Back-of-House · Supabase">酒店後勤系統 · Supabase</div>
 
-<button class="add-fab" id="addFab" onclick="openProductForm()"><span data-zh="＋ 新增產品" data-en="＋ Add product">＋ 新增產品</span></button>
+<button class="add-fab" id="addFab" onclick="openAddForModule()"><span id="addFabLabel" data-zh="＋ 新增產品" data-en="＋ Add">＋ 新增產品</span></button>
 <button class="admin-fab locked" id="adminFab" onclick="toggleAdmin()"><span data-zh="🔒 管理員" data-en="🔒 Admin">🔒 管理員</span></button>
 
 <!-- Login modal -->
@@ -224,6 +274,86 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   </div>
 </div>
 
+<!-- Vacuum add/edit modal -->
+<div class="modal-overlay" id="vacuumModal">
+  <div class="modal-box form-modal">
+    <h3 id="vmTitle" data-zh="新增吸塵機" data-en="Add vacuum">新增吸塵機</h3>
+    <div class="modal-sub" data-zh="每台獨立管理" data-en="Tracked individually">每台獨立管理</div>
+
+    <div class="row2">
+      <div><label data-zh="型號" data-en="Model">型號</label><input id="vfModel"></div>
+      <div><label data-zh="品牌" data-en="Brand">品牌</label><input id="vfBrand"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="樓層代號" data-en="Floor code">樓層代號</label><input id="vfFloor"></div>
+      <div>
+        <label data-zh="狀態" data-en="Status">狀態</label>
+        <select id="vfStatus">
+          <option value="正常" data-zh="正常" data-en="OK">正常</option>
+          <option value="維修中" data-zh="維修中" data-en="Repairing">維修中</option>
+          <option value="報廢" data-zh="報廢" data-en="Scrapped">報廢</option>
+        </select>
+      </div>
+    </div>
+
+    <label data-zh="圖片" data-en="Image">圖片</label>
+    <div class="img-preview" id="vfImgPreview"><span class="no-img">🌀</span></div>
+    <input type="file" id="vfImgFile" accept="image/*" onchange="onPickImage(event,'vf')">
+
+    <label data-zh="備註" data-en="Notes">備註</label>
+    <textarea id="vfNotes"></textarea>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeVacuumForm()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="vfSaveBtn" onclick="saveVacuumForm()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="vfError">Error</div>
+  </div>
+</div>
+
+<!-- Maintenance record modal -->
+<div class="modal-overlay" id="maintModal">
+  <div class="modal-box form-modal">
+    <h3 data-zh="新增保養記錄" data-en="Add maintenance">新增保養記錄</h3>
+    <div class="modal-sub" id="mfSub"></div>
+    <label data-zh="日期" data-en="Date">日期</label>
+    <input type="date" id="mfDate">
+    <label data-zh="做了什麼（換零件 / 清洗…）" data-en="What was done">做了什麼（換零件 / 清洗…）</label>
+    <textarea id="mfDesc"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeMaintForm()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="mfSaveBtn" onclick="saveMaintForm()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="mfError">Error</div>
+  </div>
+</div>
+
+<!-- Tool add/edit modal -->
+<div class="modal-overlay" id="toolModal">
+  <div class="modal-box form-modal">
+    <h3 id="tmTitle" data-zh="新增工具" data-en="Add tool">新增工具</h3>
+    <div class="modal-sub" data-zh="填寫工具資料" data-en="Fill in tool details">填寫工具資料</div>
+
+    <label data-zh="名稱" data-en="Name">名稱</label>
+    <input id="tfName">
+
+    <label data-zh="圖片" data-en="Image">圖片</label>
+    <div class="img-preview" id="tfImgPreview"><span class="no-img">🧹</span></div>
+    <input type="file" id="tfImgFile" accept="image/*" onchange="onPickImage(event,'tf')">
+
+    <div class="row2">
+      <div><label data-zh="數量" data-en="Stock">數量</label><input type="number" id="tfStock" min="0" value="0"></div>
+      <div><label data-zh="備註" data-en="Notes">備註</label><input id="tfNotes"></div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeToolForm()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="tfSaveBtn" onclick="saveToolForm()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="tfError">Error</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================================
@@ -239,12 +369,23 @@ var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var isAdmin = false;
 var currentPwd = "";
 var currentLang = "zh";
-var categories = [];   // [{id, icon, name_zh, name_en, color, bg, sort_order}]
-var products = [];     // full rows
-var editingId = null;  // product id being edited (null = new)
+var currentModule = "cleaning";
+var categories = [];
+var products = [];
+var vacuums = [];
+var vacMaint = [];
+var tools = [];
+var editProductId = null, editVacuumId = null, editToolId = null, maintVacuumId = null;
+var formImages = { pf: null, vf: null, tf: null };
+
+var MODULE_ADD_LABEL = {
+  cleaning: { zh: "＋ 新增產品", en: "＋ Add product" },
+  vacuum:   { zh: "＋ 新增吸塵機", en: "＋ Add vacuum" },
+  tool:     { zh: "＋ 新增工具", en: "＋ Add tool" },
+};
 
 // ============================================================================
-//  Load + render
+//  Load
 // ============================================================================
 async function loadAll() {
   var cats = await sb.from("categories").select("*").order("sort_order");
@@ -253,138 +394,68 @@ async function loadAll() {
     document.getElementById("container").innerHTML =
       '<div class="loading-hint">' +
       (currentLang === "zh" ? "無法連接資料庫，請檢查設定" : "Cannot connect to database, check config") +
-      '</div>';
+      "</div>";
     console.error(cats.error || prods.error);
     return;
   }
   categories = cats.data || [];
   products = prods.data || [];
+  // new modules — resilient: if their tables don't exist yet, treat as empty
+  var v = await sb.from("vacuums").select("*").order("floor_code").order("model");
+  vacuums = v.error ? [] : (v.data || []);
+  var m = await sb.from("vacuum_maintenance").select("*").order("service_date", { ascending: false });
+  vacMaint = m.error ? [] : (m.data || []);
+  var t = await sb.from("tools").select("*").order("sort_order");
+  tools = t.error ? [] : (t.data || []);
   render();
 }
 
+// ============================================================================
+//  Helpers
+// ============================================================================
 function esc(s) {
   return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
   });
 }
-
 function slug(cat) { return "cat-" + cat.id; }
-
-// --- status helpers -------------------------------------------------------
-// The pill shows the CURRENT state; the button shows the ACTION on click.
-function stateText(status, lang) {
-  if (status === "停用") return lang === "zh" ? "已停用" : "Disabled";
-  return lang === "zh" ? "上架中" : "Live";
-}
+function stateText(status, lang) { return status === "停用" ? (lang === "zh" ? "已停用" : "Disabled") : (lang === "zh" ? "上架中" : "Live"); }
 function toggleText(status, lang) {
-  if (status === "停用") return lang === "zh" ? "▶ 啟用" : "▶ Enable"; // currently off -> enable
-  return lang === "zh" ? "■ 停用" : "■ Disable";                     // currently on  -> disable
+  return status === "停用" ? (lang === "zh" ? "▶ 啟用" : "▶ Enable") : (lang === "zh" ? "■ 停用" : "■ Disable");
 }
-function refreshStatusUI(id) {
-  var p = products.find(function (x) { return x.id === id; });
-  if (!p) return;
-  var card = document.querySelector('.product-card[data-id="' + id + '"]');
-  var pill = document.getElementById("statepill-" + id);
-  var btn = document.getElementById("togglebtn-" + id);
-  var disabled = p.status === "停用";
-  if (card) card.classList.toggle("disabled", disabled);
-  if (pill) { pill.textContent = stateText(p.status, currentLang); pill.className = "state-pill " + (disabled ? "state-off" : "state-on"); }
-  if (btn) { btn.textContent = toggleText(p.status, currentLang); btn.className = "toggle-btn " + (disabled ? "enable" : "disable"); }
+function vacStatusText(st, lang) {
+  if (lang === "en") return st === "維修中" ? "Repairing" : st === "報廢" ? "Scrapped" : "OK";
+  return st;
+}
+function emptyState(ico, zh, en) {
+  return '<div class="empty-state"><span class="ico">' + ico + '</span><div data-zh="' + esc(zh) + '" data-en="' + esc(en) + '">' + esc(zh) + "</div></div>";
 }
 
+// ============================================================================
+//  Render dispatch
+// ============================================================================
 function render() {
-  // header product count
-  var sub = document.getElementById("headerSub");
-  sub.setAttribute("data-zh", "Chemical Product Catalog — 共 " + products.length + " 款產品");
-  sub.setAttribute("data-en", products.length + " Products");
-
-  // nav bar
-  var nav = "";
-  categories.forEach(function (c) {
-    var count = products.filter(function (p) { return p.category_id === c.id; }).length;
-    nav +=
-      '<a href="#' + slug(c) + '" class="nav-item" style="--cat-color:' + esc(c.color) + '">' +
-      esc(c.icon) + ' <span data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' +
-      esc(c.name_zh) + '</span> <span class="nav-count">' + count + "</span></a>";
+  document.querySelectorAll(".module-btn").forEach(function (b) {
+    b.classList.toggle("active", b.getAttribute("data-m") === currentModule);
   });
-  document.getElementById("navBar").innerHTML = nav;
+  var lab = MODULE_ADD_LABEL[currentModule];
+  var labEl = document.getElementById("addFabLabel");
+  labEl.setAttribute("data-zh", lab.zh);
+  labEl.setAttribute("data-en", lab.en);
+  document.getElementById("addFab").style.display = isAdmin ? "block" : "none";
 
-  // sections
   var html = "";
-  categories.forEach(function (c) {
-    var items = products.filter(function (p) { return p.category_id === c.id; });
-    var typeWord = currentLang === "zh" ? " 種" : " types";
-    html +=
-      '<section id="' + slug(c) + '" class="category-section">' +
-      '<div class="category-header" style="border-left:5px solid ' + esc(c.color) + ";background:" + esc(c.bg) + '">' +
-      '<div class="cat-title"><span class="cat-icon">' + esc(c.icon) + "</span><div>" +
-      '<h2 data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) + "</h2>" +
-      '<span class="cat-subtitle" data-zh="' + esc(c.name_en) + " — " + items.length + ' 種" data-en="' +
-      esc(c.name_en) + " — " + items.length + ' types">' + esc(c.name_en) + " — " + items.length + typeWord +
-      "</span></div></div></div>" +
-      '<div class="products-grid">' +
-      items.map(cardHtml).join("") +
-      "</div></section>";
-  });
+  if (currentModule === "cleaning") html = renderCleaning();
+  else if (currentModule === "vacuum") html = renderVacuum();
+  else html = renderTool();
   document.getElementById("container").innerHTML = html;
 
-  setLang(currentLang);
-  applyAdminVisibility();
+  applyLang();
 }
+function setModule(m) { currentModule = m; render(); }
 
-function cardHtml(p) {
-  var s = Number(p.stock);
-  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
-  var disabled = p.status === "停用";
-  var rinseYes = p.rinse_zh === "需要";
-  var img = p.image
-    ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">'
-    : '<span class="no-img">🧴</span>';
-
-  return (
-    '<div class="product-card' + (disabled ? " disabled" : "") + '" data-id="' + p.id + '">' +
-      '<div class="disabled-badge" data-zh="已停用" data-en="Disabled">已停用</div>' +
-      '<div class="product-img">' + img + "</div>" +
-      '<div class="product-info">' +
-        '<div class="info-top"><div>' +
-          '<div class="product-name" data-zh="' + esc(p.name_zh) + '" data-en="' + esc(p.name_en) + '">' + esc(p.name_zh) + "</div>" +
-          '<div class="product-name-sub" data-zh="' + esc(p.subname_zh) + '" data-en="' + esc(p.subname_en) + '">' + esc(p.subname_zh) + "</div>" +
-        "</div>" +
-        '<div class="stock-area">' +
-          '<div class="stock-badge ' + stockClass + '" id="stock-' + p.id + '">' + s + "</div>" +
-          '<div class="stock-label" data-zh="庫存" data-en="Stock">庫存</div>' +
-        "</div></div>" +
-        '<table class="detail-table">' +
-          '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td>' +
-              '<td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
-          '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td>' +
-              '<td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
-          '<tr><td class="dt-label" data-zh="需要過水" data-en="Rinse">需要過水</td><td class="dt-value">' +
-              '<span class="' + (rinseYes ? "rinse-yes" : "rinse-no") + '" data-zh="' + esc(p.rinse_zh) + '" data-en="' + esc(p.rinse_en) + '">' + esc(p.rinse_zh) + "</span>" +
-          "</td></tr>" +
-        "</table>" +
-        '<div class="stock-edit" id="edit-' + p.id + '">' +
-          '<button class="adj-btn" onclick="adjustStock(' + p.id + ',-1)">-</button>' +
-          '<input type="number" class="stock-input" id="input-' + p.id + '" min="0" value="' + s + '">' +
-          '<button class="adj-btn" onclick="adjustStock(' + p.id + ',1)">+</button>' +
-          '<button class="save-btn" id="savebtn-' + p.id + '" onclick="saveStock(' + p.id + ')" data-zh="儲存" data-en="Save">儲存</button>' +
-        "</div>" +
-        '<div class="status-row" id="srow-' + p.id + '" style="display:none">' +
-          '<span class="state-pill ' + (disabled ? "state-off" : "state-on") + '" id="statepill-' + p.id + '">' + stateText(p.status, currentLang) + "</span>" +
-          '<button class="toggle-btn ' + (disabled ? "enable" : "disable") + '" id="togglebtn-' + p.id + '" onclick="toggleStatus(' + p.id + ')">' + toggleText(p.status, currentLang) + "</button>" +
-          '<button class="edit-btn" onclick="openProductForm(' + p.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
-          '<button class="del-btn" onclick="deleteProduct(' + p.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
-        "</div>" +
-      "</div>" +
-    "</div>"
-  );
-}
-
-// ============================================================================
-//  Language toggle (reads data-zh / data-en on every element)
-// ============================================================================
-function setLang(lang) {
-  currentLang = lang;
+function applyLang() {
+  var lang = currentLang;
   document.getElementById("btnZh").className = "lang-btn" + (lang === "zh" ? " active" : "");
   document.getElementById("btnEn").className = "lang-btn" + (lang === "en" ? " active" : "");
   document.querySelectorAll("[data-" + lang + "]").forEach(function (el) {
@@ -394,155 +465,126 @@ function setLang(lang) {
   document.querySelectorAll("[data-" + lang + "-placeholder]").forEach(function (el) {
     el.placeholder = el.getAttribute("data-" + lang + "-placeholder");
   });
-  // status pill + toggle action button reflect state in current language
-  products.forEach(function (p) { refreshStatusUI(p.id); });
 }
+function setLang(lang) { currentLang = lang; render(); }
 
 // ============================================================================
-//  Admin session
+//  Module 1 — Cleaning chemicals
 // ============================================================================
-function toggleAdmin() {
-  if (isAdmin) { logout(); return; }
-  document.getElementById("loginModal").classList.add("show");
-  document.getElementById("pwdInput").value = "";
-  document.getElementById("modalError").style.display = "none";
-  setTimeout(function () { document.getElementById("pwdInput").focus(); }, 100);
-}
-function closeModal() { document.getElementById("loginModal").classList.remove("show"); }
+function renderCleaning() {
+  if (!products.length) return emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
+  var nav = '<nav class="nav-bar">';
+  categories.forEach(function (c) {
+    var count = products.filter(function (p) { return p.category_id === c.id; }).length;
+    nav += '<a href="#' + slug(c) + '" class="nav-item" style="--cat-color:' + esc(c.color) + '">' +
+      esc(c.icon) + ' <span data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) +
+      '</span> <span class="nav-count">' + count + "</span></a>";
+  });
+  nav += "</nav>";
 
-async function doLogin() {
-  var pwd = document.getElementById("pwdInput").value;
-  if (!pwd) return;
-  var loginBtn = document.querySelector("#loginModal .btn-login");
-  var errEl = document.getElementById("modalError");
-  loginBtn.textContent = "...";
-  loginBtn.disabled = true;
-  errEl.style.display = "none";
-
-  var res = await sb.rpc("verify_password", { p_password: pwd });
-  loginBtn.textContent = currentLang === "zh" ? "登入" : "Login";
-  loginBtn.disabled = false;
-
-  if (!res.error && res.data === true) {
-    currentPwd = pwd;
-    isAdmin = true;
-    closeModal();
-    var fab = document.getElementById("adminFab");
-    fab.className = "admin-fab unlocked";
-    fab.querySelector("span").setAttribute("data-zh", "🔓 已登入");
-    fab.querySelector("span").setAttribute("data-en", "🔓 Logged in");
-    document.getElementById("statusBar").classList.add("show");
-    applyAdminVisibility();
-    setLang(currentLang);
-  } else if (res.error) {
-    errEl.textContent = currentLang === "zh" ? "無法連接伺服器" : "Cannot connect to server";
-    errEl.style.display = "block";
-  } else {
-    errEl.textContent = currentLang === "zh" ? "密碼錯誤，請重試" : "Wrong password, please try again";
-    errEl.style.display = "block";
-  }
+  var body = "";
+  categories.forEach(function (c) {
+    var items = products.filter(function (p) { return p.category_id === c.id; });
+    if (!items.length) return;
+    var typeWord = currentLang === "zh" ? " 種" : " types";
+    body += '<section id="' + slug(c) + '" class="category-section">' +
+      '<div class="category-header" style="border-left:5px solid ' + esc(c.color) + ";background:" + esc(c.bg) + '">' +
+      '<div class="cat-title"><span class="cat-icon">' + esc(c.icon) + "</span><div>" +
+      '<h2 data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) + "</h2>" +
+      '<span class="cat-subtitle">' + esc(c.name_en) + " — " + items.length + typeWord + "</span></div></div></div>" +
+      '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div></section>";
+  });
+  return nav + body;
 }
 
-function logout() {
-  isAdmin = false; currentPwd = "";
-  var fab = document.getElementById("adminFab");
-  fab.className = "admin-fab locked";
-  fab.querySelector("span").setAttribute("data-zh", "🔒 管理員");
-  fab.querySelector("span").setAttribute("data-en", "🔒 Admin");
-  document.getElementById("statusBar").classList.remove("show");
-  applyAdminVisibility();
-  setLang(currentLang);
+function cleaningCard(p) {
+  var s = Number(p.stock);
+  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var disabled = p.status === "停用";
+  var rinseYes = p.rinse_zh === "需要";
+  var img = p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">' : '<span class="no-img">🧴</span>';
+  var admin = isAdmin ? (
+    '<div class="stock-edit" style="display:flex">' +
+      '<button class="adj-btn" onclick="adjustStock(' + p.id + ',-1)">-</button>' +
+      '<input type="number" class="stock-input" id="input-' + p.id + '" min="0" value="' + s + '">' +
+      '<button class="adj-btn" onclick="adjustStock(' + p.id + ',1)">+</button>' +
+      '<button class="save-btn" id="savebtn-' + p.id + '" onclick="saveStock(' + p.id + ')" data-zh="儲存" data-en="Save">儲存</button>' +
+    "</div>" +
+    '<div class="status-row" style="display:flex">' +
+      '<span class="state-pill ' + (disabled ? "state-off" : "state-on") + '">' + stateText(p.status, currentLang) + "</span>" +
+      '<button class="toggle-btn ' + (disabled ? "enable" : "disable") + '" onclick="toggleStatus(' + p.id + ')">' + toggleText(p.status, currentLang) + "</button>" +
+      '<button class="edit-btn" onclick="openProductForm(' + p.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
+      '<button class="del-btn" onclick="deleteProduct(' + p.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
+    "</div>"
+  ) : "";
+  return '<div class="product-card' + (disabled ? " disabled" : "") + '" data-id="' + p.id + '">' +
+    '<div class="disabled-badge" data-zh="已停用" data-en="Disabled">已停用</div>' +
+    '<div class="product-img">' + img + "</div>" +
+    '<div class="product-info"><div class="info-top"><div>' +
+      '<div class="product-name" data-zh="' + esc(p.name_zh) + '" data-en="' + esc(p.name_en) + '">' + esc(p.name_zh) + "</div>" +
+      '<div class="product-name-sub" data-zh="' + esc(p.subname_zh) + '" data-en="' + esc(p.subname_en) + '">' + esc(p.subname_zh) + "</div>" +
+    "</div>" +
+    '<div class="stock-area"><div class="stock-badge ' + stockClass + '" id="stock-' + p.id + '">' + s + "</div>" +
+    '<div class="stock-label" data-zh="庫存" data-en="Stock">庫存</div></div></div>' +
+    '<table class="detail-table">' +
+      '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td><td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
+      '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td><td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
+      '<tr><td class="dt-label" data-zh="需要過水" data-en="Rinse">需要過水</td><td class="dt-value"><span class="' + (rinseYes ? "rinse-yes" : "rinse-no") + '" data-zh="' + esc(p.rinse_zh) + '" data-en="' + esc(p.rinse_en) + '">' + esc(p.rinse_zh) + "</span></td></tr>" +
+    "</table>" + admin +
+    "</div></div>";
 }
 
-function applyAdminVisibility() {
-  document.getElementById("addFab").style.display = isAdmin ? "block" : "none";
-  document.querySelectorAll(".stock-edit").forEach(function (el) { el.style.display = isAdmin ? "flex" : "none"; });
-  document.querySelectorAll(".status-row").forEach(function (el) { el.style.display = isAdmin ? "flex" : "none"; });
-}
-
-// ============================================================================
-//  Stock edit
-// ============================================================================
 function adjustStock(id, delta) {
   var inp = document.getElementById("input-" + id);
-  var val = Number(inp.value) + delta;
-  if (val < 0) val = 0;
-  inp.value = val;
+  var val = Number(inp.value) + delta; if (val < 0) val = 0; inp.value = val;
 }
-
 async function saveStock(id) {
   var inp = document.getElementById("input-" + id);
   var btn = document.getElementById("savebtn-" + id);
-  var newStock = Number(inp.value);
-  btn.textContent = "...";
-  btn.className = "save-btn saving";
-
-  var res = await sb.rpc("update_stock", { p_password: currentPwd, p_id: id, p_stock: newStock });
+  var n = Number(inp.value);
+  btn.textContent = "..."; btn.className = "save-btn saving";
+  var res = await sb.rpc("update_stock", { p_password: currentPwd, p_id: id, p_stock: n });
   if (!res.error) {
-    btn.textContent = "OK!";
-    btn.className = "save-btn saved";
-    updateLocal(id, res.data);
-    var badge = document.getElementById("stock-" + id);
-    badge.textContent = newStock;
-    badge.className = "stock-badge " + (newStock > 5 ? "stock-ok" : newStock > 0 ? "stock-low" : "stock-out");
+    btn.textContent = "OK!"; btn.className = "save-btn saved";
+    replaceLocal(products, res.data);
+    var b = document.getElementById("stock-" + id);
+    b.textContent = n; b.className = "stock-badge " + (n > 5 ? "stock-ok" : n > 0 ? "stock-low" : "stock-out");
   } else {
-    handleAdminError(res.error, btn);
+    btn.textContent = currentLang === "zh" ? "失敗" : "Failed"; btn.className = "save-btn error"; adminErr(res.error);
   }
-  setTimeout(function () {
-    btn.textContent = currentLang === "zh" ? "儲存" : "Save";
-    btn.className = "save-btn";
-  }, 2000);
+  setTimeout(function () { btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.className = "save-btn"; }, 1500);
 }
-
 async function toggleStatus(id) {
   var p = products.find(function (x) { return x.id === id; });
-  var btn = document.getElementById("togglebtn-" + id);
-  var newStatus = p.status === "停用" ? "啟用" : "停用";
-  btn.textContent = "...";
-
-  var res = await sb.rpc("update_status", { p_password: currentPwd, p_id: id, p_status: newStatus });
-  if (!res.error) {
-    updateLocal(id, res.data);
-    refreshStatusUI(id);
-  } else {
-    handleAdminError(res.error, null);
-    btn.textContent = currentLang === "zh" ? "失敗" : "Failed";
-    setTimeout(function () { refreshStatusUI(id); }, 2000);
-  }
+  var next = p.status === "停用" ? "啟用" : "停用";
+  var res = await sb.rpc("update_status", { p_password: currentPwd, p_id: id, p_status: next });
+  if (!res.error) { replaceLocal(products, res.data); render(); } else adminErr(res.error);
 }
 
-// ============================================================================
-//  Product add / edit / delete
-// ============================================================================
+// ---- cleaning product form ----
 function openProductForm(id) {
-  editingId = (id == null ? null : id);
+  editProductId = (id == null ? null : id);
   fillCategorySelect();
-  var pm = document.getElementById("productModal");
-  var title = document.getElementById("pmTitle");
   document.getElementById("pfError").style.display = "none";
   document.getElementById("pfImgFile").value = "";
-
-  if (editingId == null) {
+  var title = document.getElementById("pmTitle");
+  if (editProductId == null) {
     title.setAttribute("data-zh", "新增產品"); title.setAttribute("data-en", "Add product");
-    setForm({ category_id: categories[0] ? categories[0].id : null, stock: 0, rinse_zh: "不需要" });
+    setProductForm({ category_id: categories[0] && categories[0].id, stock: 0, rinse_zh: "不需要" });
   } else {
     title.setAttribute("data-zh", "編輯產品"); title.setAttribute("data-en", "Edit product");
-    setForm(products.find(function (x) { return x.id === editingId; }));
+    setProductForm(products.find(function (x) { return x.id === editProductId; }));
   }
-  pm.classList.add("show");
-  setLang(currentLang);
+  document.getElementById("productModal").classList.add("show");
+  applyLang();
 }
 function closeProductForm() { document.getElementById("productModal").classList.remove("show"); }
-
 function fillCategorySelect() {
-  var sel = document.getElementById("pfCategory");
-  sel.innerHTML = categories.map(function (c) {
+  document.getElementById("pfCategory").innerHTML = categories.map(function (c) {
     return '<option value="' + c.id + '">' + esc(c.icon + " " + c.name_zh) + "</option>";
   }).join("");
 }
-
-var pfImageData = null;
-function setForm(p) {
+function setProductForm(p) {
   p = p || {};
   document.getElementById("pfCategory").value = p.category_id || (categories[0] && categories[0].id) || "";
   document.getElementById("pfNameZh").value = p.name_zh || "";
@@ -553,38 +595,21 @@ function setForm(p) {
   document.getElementById("pfDilEn").value = p.dilution_en || "";
   document.getElementById("pfRinse").value = p.rinse_zh === "需要" ? "yes" : "no";
   document.getElementById("pfStock").value = p.stock != null ? p.stock : 0;
-  pfImageData = p.image || null;
-  var prev = document.getElementById("pfImgPreview");
-  prev.innerHTML = pfImageData ? '<img src="' + esc(pfImageData) + '">' : '<span class="no-img">🧴</span>';
+  formImages.pf = p.image || null;
+  document.getElementById("pfImgPreview").innerHTML = formImages.pf ? '<img src="' + esc(formImages.pf) + '">' : '<span class="no-img">🧴</span>';
 }
-
-function onPickImage(e) {
-  var file = e.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function () {
-    pfImageData = reader.result; // data URI
-    document.getElementById("pfImgPreview").innerHTML = '<img src="' + esc(pfImageData) + '">';
-  };
-  reader.readAsDataURL(file);
-}
-
 async function saveProductForm() {
   var btn = document.getElementById("pfSaveBtn");
   var errEl = document.getElementById("pfError");
   errEl.style.display = "none";
-  var rinseYes = document.getElementById("pfRinse").value === "yes";
   var nameZh = document.getElementById("pfNameZh").value.trim();
-  if (!nameZh) {
-    errEl.textContent = currentLang === "zh" ? "請填寫中文名稱" : "Name (ZH) required";
-    errEl.style.display = "block";
-    return;
-  }
+  if (!nameZh) { errEl.textContent = currentLang === "zh" ? "請填寫中文名稱" : "Name (ZH) required"; errEl.style.display = "block"; return; }
+  var rinseYes = document.getElementById("pfRinse").value === "yes";
   var payload = {
     category_id: document.getElementById("pfCategory").value,
     name_zh: nameZh,
     name_en: document.getElementById("pfNameEn").value.trim(),
-    subname_zh: document.getElementById("pfNameEn").value.trim(),  // sub shows the other language
+    subname_zh: document.getElementById("pfNameEn").value.trim(),
     subname_en: nameZh,
     applicable_zh: document.getElementById("pfAppZh").value.trim(),
     applicable_en: document.getElementById("pfAppEn").value.trim(),
@@ -592,59 +617,351 @@ async function saveProductForm() {
     dilution_en: document.getElementById("pfDilEn").value.trim(),
     rinse_zh: rinseYes ? "需要" : "不需要",
     rinse_en: rinseYes ? "Required" : "Not required",
-    image: pfImageData,
+    image: formImages.pf,
     alt: nameZh,
     stock: document.getElementById("pfStock").value,
     status: "啟用",
-    sort_order: editingId || 999,
+    sort_order: editProductId || 999,
   };
-  if (editingId != null) payload.id = editingId;
-
+  if (editProductId != null) payload.id = editProductId;
   btn.textContent = "..."; btn.disabled = true;
   var res = await sb.rpc("upsert_product", { p_password: currentPwd, p_product: payload });
   btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
-
-  if (!res.error) {
-    closeProductForm();
-    await loadAll();
-  } else {
-    errEl.textContent = friendlyError(res.error);
-    errEl.style.display = "block";
-  }
+  if (!res.error) { upsertLocal(products, res.data); closeProductForm(); render(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
 }
-
 async function deleteProduct(id) {
   var p = products.find(function (x) { return x.id === id; });
-  var name = p ? p.name_zh : "#" + id;
-  if (!confirm((currentLang === "zh" ? "確定刪除「" : "Delete \"") + name + (currentLang === "zh" ? "」？此操作無法復原。" : "\"? This cannot be undone."))) return;
+  if (!confirm((currentLang === "zh" ? "確定刪除「" : 'Delete "') + (p ? p.name_zh : id) + (currentLang === "zh" ? "」？此操作無法復原。" : '"?'))) return;
   var res = await sb.rpc("delete_product", { p_password: currentPwd, p_id: id });
-  if (!res.error) { await loadAll(); }
-  else { alert(friendlyError(res.error)); }
+  if (!res.error) { products = products.filter(function (x) { return x.id !== id; }); render(); } else adminErr(res.error);
 }
 
 // ============================================================================
-//  Helpers
+//  Module 2 — Vacuums
 // ============================================================================
-function updateLocal(id, row) {
+function renderVacuum() {
+  if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
+  var groups = {};
+  vacuums.forEach(function (v) {
+    var f = v.floor_code && v.floor_code.trim() ? v.floor_code : (currentLang === "zh" ? "未指定樓層" : "No floor");
+    (groups[f] = groups[f] || []).push(v);
+  });
+  var floors = Object.keys(groups).sort();
+  var repairing = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
+  var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
+    (currentLang === "zh"
+      ? "共 " + vacuums.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
+      : vacuums.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
+  var html = summary;
+  floors.forEach(function (f) {
+    html += '<section class="category-section">' +
+      '<div class="category-header" style="border-left:5px solid #2E86C1;background:#EBF5FB">' +
+      '<div class="cat-title"><span class="cat-icon">🏢</span><div><h2>' + esc(f) + "</h2>" +
+      '<span class="cat-subtitle">' + groups[f].length + (currentLang === "zh" ? " 台" : " units") + "</span></div></div></div>" +
+      '<div class="vac-grid">' + groups[f].map(vacCard).join("") + "</div></section>";
+  });
+  return html;
+}
+function vacCard(v) {
+  var img = v.image ? '<img src="' + esc(v.image) + '">' : '<span class="no-img">🌀</span>';
+  var st = v.status;
+  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
+  var records = vacMaint.filter(function (m) { return m.vacuum_id === v.id; });
+  var maintList = records.length
+    ? records.map(function (m) {
+        return '<div class="maint-item"><span>' + esc(m.description) +
+          (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(' + m.id + ')">✕</button>' : "") +
+          '</span><span class="maint-date">' + esc(m.service_date) + "</span></div>";
+      }).join("")
+    : '<div class="maint-empty" data-zh="尚無保養記錄" data-en="No records yet">尚無保養記錄</div>';
+  var admin = isAdmin ? (
+    '<div class="vac-actions">' +
+      '<button class="mini-btn warn" onclick="toggleVacuumStatus(' + v.id + ')" data-zh="切換狀態" data-en="Toggle">切換狀態</button>' +
+      '<button class="mini-btn" onclick="openMaintForm(' + v.id + ')" data-zh="＋ 保養" data-en="+ Maint">＋ 保養</button>' +
+      '<button class="mini-btn" onclick="openVacuumForm(' + v.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
+      '<button class="mini-btn grey" onclick="deleteVacuum(' + v.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
+    "</div>"
+  ) : "";
+  return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
+    '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
+    '<div class="vac-head"><div class="vac-model">' + esc(v.model) + "</div>" +
+    (v.brand ? '<div class="vac-brand">' + esc(v.brand) + "</div>" : "") +
+    '<div class="vac-badges">' +
+      (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
+      '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
+    "</div></div></div>" +
+    (v.notes ? '<div class="vac-notes">' + esc(v.notes) + "</div>" : "") +
+    '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+    admin + "</div>";
+}
+async function toggleVacuumStatus(id) {
+  var v = vacuums.find(function (x) { return x.id === id; });
+  var next = v.status === "正常" ? "維修中" : "正常";
+  var res = await sb.rpc("update_vacuum_status", { p_password: currentPwd, p_id: id, p_status: next });
+  if (!res.error) { replaceLocal(vacuums, res.data); render(); } else adminErr(res.error);
+}
+function openVacuumForm(id) {
+  editVacuumId = (id == null ? null : id);
+  document.getElementById("vfError").style.display = "none";
+  document.getElementById("vfImgFile").value = "";
+  var title = document.getElementById("vmTitle");
+  var v = editVacuumId == null ? { status: "正常" } : vacuums.find(function (x) { return x.id === editVacuumId; });
+  title.setAttribute("data-zh", editVacuumId == null ? "新增吸塵機" : "編輯吸塵機");
+  title.setAttribute("data-en", editVacuumId == null ? "Add vacuum" : "Edit vacuum");
+  document.getElementById("vfModel").value = v.model || "";
+  document.getElementById("vfBrand").value = v.brand || "";
+  document.getElementById("vfFloor").value = v.floor_code || "";
+  document.getElementById("vfStatus").value = v.status || "正常";
+  document.getElementById("vfNotes").value = v.notes || "";
+  formImages.vf = v.image || null;
+  document.getElementById("vfImgPreview").innerHTML = formImages.vf ? '<img src="' + esc(formImages.vf) + '">' : '<span class="no-img">🌀</span>';
+  document.getElementById("vacuumModal").classList.add("show");
+  applyLang();
+}
+function closeVacuumForm() { document.getElementById("vacuumModal").classList.remove("show"); }
+async function saveVacuumForm() {
+  var btn = document.getElementById("vfSaveBtn");
+  var errEl = document.getElementById("vfError");
+  errEl.style.display = "none";
+  var model = document.getElementById("vfModel").value.trim();
+  if (!model) { errEl.textContent = currentLang === "zh" ? "請填寫型號" : "Model required"; errEl.style.display = "block"; return; }
+  var payload = {
+    model: model,
+    brand: document.getElementById("vfBrand").value.trim(),
+    floor_code: document.getElementById("vfFloor").value.trim(),
+    status: document.getElementById("vfStatus").value,
+    notes: document.getElementById("vfNotes").value.trim(),
+    image: formImages.vf,
+  };
+  if (editVacuumId != null) payload.id = editVacuumId;
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("upsert_vacuum", { p_password: currentPwd, p_vacuum: payload });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) { upsertLocal(vacuums, res.data); closeVacuumForm(); render(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+async function deleteVacuum(id) {
+  var v = vacuums.find(function (x) { return x.id === id; });
+  if (!confirm((currentLang === "zh" ? "確定刪除吸塵機「" : 'Delete vacuum "') + (v ? v.model : id) + (currentLang === "zh" ? "」？保養記錄也會一併刪除。" : '"? Maintenance records will also be deleted.'))) return;
+  var res = await sb.rpc("delete_vacuum", { p_password: currentPwd, p_id: id });
+  if (!res.error) {
+    vacuums = vacuums.filter(function (x) { return x.id !== id; });
+    vacMaint = vacMaint.filter(function (m) { return m.vacuum_id !== id; });
+    render();
+  } else adminErr(res.error);
+}
+
+// ---- maintenance ----
+function openMaintForm(vacuumId) {
+  maintVacuumId = vacuumId;
+  var v = vacuums.find(function (x) { return x.id === vacuumId; });
+  document.getElementById("mfSub").textContent = v ? v.model + (v.floor_code ? " · " + v.floor_code : "") : "";
+  document.getElementById("mfError").style.display = "none";
+  document.getElementById("mfDate").value = new Date().toISOString().slice(0, 10);
+  document.getElementById("mfDesc").value = "";
+  document.getElementById("maintModal").classList.add("show");
+  applyLang();
+}
+function closeMaintForm() { document.getElementById("maintModal").classList.remove("show"); }
+async function saveMaintForm() {
+  var btn = document.getElementById("mfSaveBtn");
+  var errEl = document.getElementById("mfError");
+  errEl.style.display = "none";
+  var desc = document.getElementById("mfDesc").value.trim();
+  if (!desc) { errEl.textContent = currentLang === "zh" ? "請填寫內容" : "Description required"; errEl.style.display = "block"; return; }
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("add_vacuum_maintenance", {
+    p_password: currentPwd, p_vacuum_id: maintVacuumId,
+    p_date: document.getElementById("mfDate").value || null, p_description: desc,
+  });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) { vacMaint.unshift(res.data); closeMaintForm(); render(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+async function deleteMaint(id) {
+  var res = await sb.rpc("delete_vacuum_maintenance", { p_password: currentPwd, p_id: id });
+  if (!res.error) { vacMaint = vacMaint.filter(function (m) { return m.id !== id; }); render(); } else adminErr(res.error);
+}
+
+// ============================================================================
+//  Module 3 — Tools (inventory)
+// ============================================================================
+function renderTool() {
+  if (!tools.length) return emptyState("🧹", "尚無清潔工具，登入後可新增", "No tools yet");
+  return '<section class="category-section"><div class="products-grid">' + tools.map(toolCard).join("") + "</div></section>";
+}
+function toolCard(t) {
+  var s = Number(t.stock);
+  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var disabled = t.status === "停用";
+  var img = t.image ? '<img src="' + esc(t.image) + '" loading="lazy">' : '<span class="no-img">🧹</span>';
+  var admin = isAdmin ? (
+    '<div class="stock-edit" style="display:flex">' +
+      '<button class="adj-btn" onclick="adjustToolStock(' + t.id + ',-1)">-</button>' +
+      '<input type="number" class="stock-input" id="tinput-' + t.id + '" min="0" value="' + s + '">' +
+      '<button class="adj-btn" onclick="adjustToolStock(' + t.id + ',1)">+</button>' +
+      '<button class="save-btn" id="tsave-' + t.id + '" onclick="saveToolStock(' + t.id + ')" data-zh="儲存" data-en="Save">儲存</button>' +
+    "</div>" +
+    '<div class="status-row" style="display:flex">' +
+      '<span class="state-pill ' + (disabled ? "state-off" : "state-on") + '">' + stateText(t.status, currentLang) + "</span>" +
+      '<button class="toggle-btn ' + (disabled ? "enable" : "disable") + '" onclick="toggleToolStatus(' + t.id + ')">' + toggleText(t.status, currentLang) + "</button>" +
+      '<button class="edit-btn" onclick="openToolForm(' + t.id + ')" data-zh="編輯" data-en="Edit">編輯</button>' +
+      '<button class="del-btn" onclick="deleteTool(' + t.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
+    "</div>"
+  ) : "";
+  return '<div class="product-card' + (disabled ? " disabled" : "") + '">' +
+    '<div class="disabled-badge" data-zh="已停用" data-en="Disabled">已停用</div>' +
+    '<div class="product-img">' + img + "</div>" +
+    '<div class="product-info"><div class="info-top"><div>' +
+      '<div class="product-name">' + esc(t.name) + "</div>" +
+      (t.notes ? '<div class="product-name-sub">' + esc(t.notes) + "</div>" : "") +
+    "</div>" +
+    '<div class="stock-area"><div class="stock-badge ' + stockClass + '">' + s + "</div>" +
+    '<div class="stock-label" data-zh="數量" data-en="Qty">數量</div></div></div>' + admin +
+    "</div></div>";
+}
+function adjustToolStock(id, delta) {
+  var inp = document.getElementById("tinput-" + id);
+  var val = Number(inp.value) + delta; if (val < 0) val = 0; inp.value = val;
+}
+async function saveToolStock(id) {
+  var inp = document.getElementById("tinput-" + id);
+  var btn = document.getElementById("tsave-" + id);
+  var n = Number(inp.value);
+  btn.textContent = "..."; btn.className = "save-btn saving";
+  var res = await sb.rpc("update_tool_stock", { p_password: currentPwd, p_id: id, p_stock: n });
+  if (!res.error) { btn.textContent = "OK!"; btn.className = "save-btn saved"; replaceLocal(tools, res.data); }
+  else { btn.textContent = currentLang === "zh" ? "失敗" : "Failed"; btn.className = "save-btn error"; adminErr(res.error); }
+  setTimeout(function () { btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.className = "save-btn"; }, 1500);
+}
+async function toggleToolStatus(id) {
+  var t = tools.find(function (x) { return x.id === id; });
+  var next = t.status === "停用" ? "啟用" : "停用";
+  var res = await sb.rpc("update_tool_status", { p_password: currentPwd, p_id: id, p_status: next });
+  if (!res.error) { replaceLocal(tools, res.data); render(); } else adminErr(res.error);
+}
+function openToolForm(id) {
+  editToolId = (id == null ? null : id);
+  document.getElementById("tfError").style.display = "none";
+  document.getElementById("tfImgFile").value = "";
+  var title = document.getElementById("tmTitle");
+  var t = editToolId == null ? { stock: 0 } : tools.find(function (x) { return x.id === editToolId; });
+  title.setAttribute("data-zh", editToolId == null ? "新增工具" : "編輯工具");
+  title.setAttribute("data-en", editToolId == null ? "Add tool" : "Edit tool");
+  document.getElementById("tfName").value = t.name || "";
+  document.getElementById("tfStock").value = t.stock != null ? t.stock : 0;
+  document.getElementById("tfNotes").value = t.notes || "";
+  formImages.tf = t.image || null;
+  document.getElementById("tfImgPreview").innerHTML = formImages.tf ? '<img src="' + esc(formImages.tf) + '">' : '<span class="no-img">🧹</span>';
+  document.getElementById("toolModal").classList.add("show");
+  applyLang();
+}
+function closeToolForm() { document.getElementById("toolModal").classList.remove("show"); }
+async function saveToolForm() {
+  var btn = document.getElementById("tfSaveBtn");
+  var errEl = document.getElementById("tfError");
+  errEl.style.display = "none";
+  var name = document.getElementById("tfName").value.trim();
+  if (!name) { errEl.textContent = currentLang === "zh" ? "請填寫名稱" : "Name required"; errEl.style.display = "block"; return; }
+  var payload = {
+    name: name,
+    stock: document.getElementById("tfStock").value,
+    notes: document.getElementById("tfNotes").value.trim(),
+    image: formImages.tf,
+    status: "啟用",
+  };
+  if (editToolId != null) payload.id = editToolId;
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("upsert_tool", { p_password: currentPwd, p_tool: payload });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) { upsertLocal(tools, res.data); closeToolForm(); render(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+async function deleteTool(id) {
+  var t = tools.find(function (x) { return x.id === id; });
+  if (!confirm((currentLang === "zh" ? "確定刪除工具「" : 'Delete tool "') + (t ? t.name : id) + (currentLang === "zh" ? "」？" : '"?'))) return;
+  var res = await sb.rpc("delete_tool", { p_password: currentPwd, p_id: id });
+  if (!res.error) { tools = tools.filter(function (x) { return x.id !== id; }); render(); } else adminErr(res.error);
+}
+
+// ============================================================================
+//  Admin session
+// ============================================================================
+function openAddForModule() {
+  if (currentModule === "cleaning") openProductForm();
+  else if (currentModule === "vacuum") openVacuumForm();
+  else openToolForm();
+}
+function toggleAdmin() { if (isAdmin) { logout(); return; } openLogin(); }
+function openLogin() {
+  document.getElementById("loginModal").classList.add("show");
+  document.getElementById("pwdInput").value = "";
+  var e = document.getElementById("modalError");
+  e.textContent = currentLang === "zh" ? "密碼錯誤，請重試" : "Wrong password, please try again";
+  e.style.display = "none";
+  setTimeout(function () { document.getElementById("pwdInput").focus(); }, 100);
+}
+function closeModal() { document.getElementById("loginModal").classList.remove("show"); }
+async function doLogin() {
+  var pwd = document.getElementById("pwdInput").value;
+  if (!pwd) return;
+  var loginBtn = document.querySelector("#loginModal .btn-login");
+  var errEl = document.getElementById("modalError");
+  loginBtn.textContent = "..."; loginBtn.disabled = true; errEl.style.display = "none";
+  var res = await sb.rpc("verify_password", { p_password: pwd });
+  loginBtn.textContent = currentLang === "zh" ? "登入" : "Login"; loginBtn.disabled = false;
+  if (!res.error && res.data === true) {
+    currentPwd = pwd; isAdmin = true;
+    closeModal();
+    var fab = document.getElementById("adminFab");
+    fab.className = "admin-fab unlocked";
+    fab.querySelector("span").setAttribute("data-zh", "🔓 已登入");
+    fab.querySelector("span").setAttribute("data-en", "🔓 Logged in");
+    document.getElementById("statusBar").classList.add("show");
+    render();
+  } else if (res.error) {
+    errEl.textContent = currentLang === "zh" ? "無法連接伺服器" : "Cannot connect to server"; errEl.style.display = "block";
+  } else {
+    errEl.textContent = currentLang === "zh" ? "密碼錯誤，請重試" : "Wrong password, please try again"; errEl.style.display = "block";
+  }
+}
+function logout() {
+  isAdmin = false; currentPwd = "";
+  var fab = document.getElementById("adminFab");
+  fab.className = "admin-fab locked";
+  fab.querySelector("span").setAttribute("data-zh", "🔒 管理員");
+  fab.querySelector("span").setAttribute("data-en", "🔒 Admin");
+  document.getElementById("statusBar").classList.remove("show");
+  render();
+}
+
+// ============================================================================
+//  Local cache helpers + errors
+// ============================================================================
+function replaceLocal(arr, row) {
   if (!row) return;
-  var i = products.findIndex(function (x) { return x.id === id; });
-  if (i >= 0) products[i] = row;
+  var i = arr.findIndex(function (x) { return x.id === row.id; });
+  if (i >= 0) arr[i] = row;
 }
-
+function upsertLocal(arr, row) {
+  if (!row) return;
+  var i = arr.findIndex(function (x) { return x.id === row.id; });
+  if (i >= 0) arr[i] = row; else arr.push(row);
+}
 function friendlyError(err) {
   var msg = (err && err.message) || "";
   if (/wrong password/i.test(msg)) return currentLang === "zh" ? "密碼錯誤" : "Wrong password";
   if (/not configured/i.test(msg)) return currentLang === "zh" ? "尚未設定密碼" : "Password not set";
   return currentLang === "zh" ? "操作失敗：" + msg : "Failed: " + msg;
 }
-
-function handleAdminError(err, btn) {
-  if (btn) { btn.textContent = currentLang === "zh" ? "失敗" : "Failed"; btn.className = "save-btn error"; }
+function adminErr(err) {
   if (/wrong password/i.test((err && err.message) || "")) {
-    logout();
-    document.getElementById("loginModal").classList.add("show");
+    logout(); openLogin();
     document.getElementById("modalError").textContent = currentLang === "zh" ? "密碼已失效，請重新登入" : "Session expired, please log in again";
     document.getElementById("modalError").style.display = "block";
+  } else {
+    alert(friendlyError(err));
   }
 }
 
