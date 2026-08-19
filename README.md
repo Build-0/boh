@@ -18,6 +18,12 @@
 > 1. `supabase/schema.sql`（含設定密碼）→ 2. `supabase/seed.sql`（清潔劑資料）
 > 3. `supabase/schema_modules.sql`（吸塵機＋清潔工具）
 > 4. `supabase/schema_equipment.sql`（設備）
+> 5. `supabase/schema_batches.sql`（清潔劑批次效期＋用量統計；會把現有庫存轉成初始批次）
+
+### 清潔劑批次效期 + 用量報表
+- 每個清潔劑 = 多個批次（數量＋到期日）。總庫存＝批次剩餘加總，卡片列出效期明細（快到期橘、過期紅）。
+- **進貨**：新增批次。**盤點**：填實際剩餘，系統推算用量（原總數−實數）並自最早到期批次扣（FEFO）。
+- **📊 用量報表** 分頁：分產品＋總計，可切月／季／年。資料來自 `stock_movements`（kind='out'）。
 
 ---
 

@@ -145,6 +145,29 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 .summary-line { padding:14px 6px 2px; font-size:14px; color:#5a6b7a; font-weight:600; }
 .disabled-head { border-left:5px solid #95a5a6 !important; background:#f4f4f4 !important; }
 
+/* Batch / expiry */
+.batch-box { margin-top:8px; padding-top:8px; border-top:1px dashed #e0e0e0; }
+.batch-title { font-size:11px; font-weight:700; color:#95a5a6; margin-bottom:4px; }
+.batch-item { display:flex; align-items:center; gap:6px; font-size:12px; padding:2px 0; }
+.exp-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.exp-ok { background:#27AE60; } .exp-soon { background:#E67E22; } .exp-past { background:#E74C3C; } .exp-none { background:#ccc; }
+.batch-exp { color:#34495e; flex:1; }
+.batch-item .exp-past ~ .batch-exp { color:#C0392B; font-weight:600; }
+.batch-qty { font-weight:700; color:#2c3e50; min-width:24px; text-align:right; }
+.batch-mini { border:none; background:#f0f0f0; color:#888; width:20px; height:20px; border-radius:4px; cursor:pointer; font-size:11px; line-height:1; }
+.batch-mini:hover { background:#e0e0e0; } .batch-mini.del:hover { background:#E74C3C; color:#fff; }
+
+/* Report */
+.report-controls { display:flex; gap:8px; justify-content:center; padding:14px 0; }
+.period-btn { padding:6px 16px; border:2px solid #e8e8e8; background:#fff; border-radius:20px; font-weight:600; cursor:pointer; font-family:inherit; font-size:13px; color:#555; }
+.period-btn.active { background:#2c5364; color:#fff; border-color:#2c5364; }
+.report-table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+.report-table th, .report-table td { padding:8px 10px; text-align:right; border-bottom:1px solid #f0f0f0; }
+.report-table th:first-child, .report-table td:first-child { text-align:left; }
+.report-table thead th { background:#f7f9fa; color:#5a6b7a; font-weight:700; position:sticky; top:0; }
+.report-table tr.total-row td { font-weight:800; background:#f4f8fa; border-top:2px solid #2c5364; }
+.report-scroll { overflow-x:auto; max-width:100%; }
+
 /* Empty state */
 .empty-state { text-align:center; padding:50px 20px; color:#bbb; }
 .empty-state .ico { font-size:46px; opacity:0.4; display:block; margin-bottom:10px; }
@@ -217,6 +240,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
   <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
   <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
+  <button class="module-btn" data-m="report" onclick="setModule('report')">📊 <span data-zh="用量報表" data-en="Usage">用量報表</span></button>
 </div>
 
 <div class="search-bar">
@@ -414,6 +438,68 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   </div>
 </div>
 
+<!-- Receive batch (進貨) modal -->
+<div class="modal-overlay" id="receiveModal">
+  <div class="modal-box form-modal">
+    <h3 data-zh="進貨（新增批次）" data-en="Receive (new batch)">進貨（新增批次）</h3>
+    <div class="modal-sub" id="rcSub"></div>
+    <div class="row2">
+      <div><label data-zh="數量" data-en="Quantity">數量</label><input type="number" id="rcQty" min="1" value="1"></div>
+      <div><label data-zh="進貨日" data-en="Received date">進貨日</label><input type="date" id="rcReceived"></div>
+    </div>
+    <label data-zh="到期日（沒有可留空）" data-en="Expiry date (optional)">到期日（沒有可留空）</label>
+    <input type="date" id="rcExpiry">
+    <label data-zh="備註" data-en="Note">備註</label>
+    <input id="rcNote">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeReceive()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="rcSaveBtn" onclick="saveReceive()" data-zh="進貨" data-en="Receive">進貨</button>
+    </div>
+    <div class="modal-error" id="rcError">Error</div>
+  </div>
+</div>
+
+<!-- Stock count (盤點) modal -->
+<div class="modal-overlay" id="countModal">
+  <div class="modal-box form-modal">
+    <h3 data-zh="盤點" data-en="Stock count">盤點</h3>
+    <div class="modal-sub" id="ctSub"></div>
+    <div class="row2">
+      <div><label data-zh="實際剩餘總數" data-en="Actual remaining">實際剩餘總數</label><input type="number" id="ctActual" min="0"></div>
+      <div><label data-zh="盤點日期" data-en="Count date">盤點日期</label><input type="date" id="ctDate"></div>
+    </div>
+    <div class="modal-sub" id="ctHint" style="margin-bottom:12px"></div>
+    <label data-zh="備註" data-en="Note">備註</label>
+    <input id="ctNote">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCount()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="ctSaveBtn" onclick="saveCount()" data-zh="確認盤點" data-en="Confirm">確認盤點</button>
+    </div>
+    <div class="modal-error" id="ctError">Error</div>
+  </div>
+</div>
+
+<!-- Batch edit modal -->
+<div class="modal-overlay" id="batchModal">
+  <div class="modal-box form-modal">
+    <h3 data-zh="編輯批次" data-en="Edit batch">編輯批次</h3>
+    <div class="modal-sub" data-zh="更正批次資料（不計入用量）" data-en="Correct batch (not counted as usage)">更正批次資料（不計入用量）</div>
+    <div class="row2">
+      <div><label data-zh="剩餘數量" data-en="Remaining">剩餘數量</label><input type="number" id="beQty" min="0"></div>
+      <div><label data-zh="進貨日" data-en="Received">進貨日</label><input type="date" id="beReceived"></div>
+    </div>
+    <label data-zh="到期日（沒有可留空）" data-en="Expiry (optional)">到期日（沒有可留空）</label>
+    <input type="date" id="beExpiry">
+    <label data-zh="備註" data-en="Note">備註</label>
+    <input id="beNote">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeBatchEdit()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="beSaveBtn" onclick="saveBatchEdit()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="beError">Error</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================================
@@ -437,8 +523,13 @@ var vacMaint = [];
 var tools = [];
 var equipment = [];
 var equipMaint = [];
+var batches = [];        // product_batches
+var movements = [];      // stock_movements (kind='out' used for usage report)
 var editProductId = null, editVacuumId = null, editToolId = null, editEquipmentId = null;
 var maintKind = null, maintTargetId = null;
+var batchProductId = null;   // product a receive/count/batch-edit targets
+var editBatchId = null;
+var reportPeriod = "month";  // month | quarter | year
 var formImages = { pf: null, vf: null, tf: null, ef: null };
 var formImagePending = { pf: null, vf: null, tf: null, ef: null };
 var searchQuery = "";
@@ -477,7 +568,19 @@ async function loadAll() {
   equipment = e.error ? [] : (e.data || []);
   var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
   equipMaint = em.error ? [] : (em.data || []);
+  // batch / expiry + usage ledger (cleaning only) — resilient if tables absent
+  var bt = await sb.from("product_batches").select("*").order("expiry_date", { ascending: true });
+  batches = bt.error ? [] : (bt.data || []);
+  var mv = await sb.from("stock_movements").select("*").eq("kind", "out").order("happened_on", { ascending: false });
+  movements = mv.error ? [] : (mv.data || []);
   render();
+}
+function batchesOf(productId) {
+  return batches.filter(function (b) { return b.product_id === productId; })
+    .sort(function (a, b) {
+      var ax = a.expiry_date || "9999-12-31", bx = b.expiry_date || "9999-12-31";
+      return ax < bx ? -1 : ax > bx ? 1 : 0;
+    });
 }
 
 // ============================================================================
@@ -574,17 +677,22 @@ function render() {
   document.querySelectorAll(".module-btn").forEach(function (b) {
     b.classList.toggle("active", b.getAttribute("data-m") === currentModule);
   });
+  var isReport = currentModule === "report";
   var lab = MODULE_ADD_LABEL[currentModule];
-  var labEl = document.getElementById("addFabLabel");
-  labEl.setAttribute("data-zh", lab.zh);
-  labEl.setAttribute("data-en", lab.en);
-  document.getElementById("addFab").style.display = isAdmin ? "block" : "none";
+  if (lab) {
+    var labEl = document.getElementById("addFabLabel");
+    labEl.setAttribute("data-zh", lab.zh);
+    labEl.setAttribute("data-en", lab.en);
+  }
+  document.getElementById("addFab").style.display = (isAdmin && !isReport) ? "block" : "none";
+  document.querySelector(".search-bar").style.display = isReport ? "none" : "flex";
 
   var html = "";
   if (currentModule === "cleaning") html = renderCleaning();
   else if (currentModule === "vacuum") html = renderVacuum();
   else if (currentModule === "tool") html = renderTool();
-  else html = renderEquipment();
+  else if (currentModule === "equipment") html = renderEquipment();
+  else html = renderReport();
   document.getElementById("container").innerHTML = html;
 
   applyLang();
@@ -673,11 +781,9 @@ function cleaningCard(p) {
   var rinseYes = p.rinse_zh === "需要";
   var img = p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">' : '<span class="no-img">🧴</span>';
   var admin = isAdmin ? (
-    '<div class="stock-edit" style="display:flex">' +
-      '<button class="adj-btn" onclick="adjustStock(' + p.id + ',-1)">-</button>' +
-      '<input type="number" class="stock-input" id="input-' + p.id + '" min="0" value="' + s + '">' +
-      '<button class="adj-btn" onclick="adjustStock(' + p.id + ',1)">+</button>' +
-      '<button class="save-btn" id="savebtn-' + p.id + '" onclick="saveStock(' + p.id + ')" data-zh="儲存" data-en="Save">儲存</button>' +
+    '<div class="stock-edit" style="display:flex;gap:6px">' +
+      '<button class="mini-btn" onclick="openReceive(' + p.id + ')" data-zh="＋ 進貨" data-en="+ Receive">＋ 進貨</button>' +
+      '<button class="mini-btn warn" onclick="openCount(' + p.id + ')" data-zh="盤點" data-en="Count">盤點</button>' +
     "</div>" +
     '<div class="status-row" style="display:flex">' +
       '<span class="state-pill ' + (disabled ? "state-off" : "state-on") + '">' + stateText(p.status, currentLang) + "</span>" +
@@ -699,8 +805,36 @@ function cleaningCard(p) {
       '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td><td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
       '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td><td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
       '<tr><td class="dt-label" data-zh="需要過水" data-en="Rinse">需要過水</td><td class="dt-value"><span class="' + (rinseYes ? "rinse-yes" : "rinse-no") + '" data-zh="' + esc(p.rinse_zh) + '" data-en="' + esc(p.rinse_en) + '">' + esc(p.rinse_zh) + "</span></td></tr>" +
-    "</table>" + admin +
+    "</table>" + batchListHtml(p) + admin +
     "</div></div>";
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var d = new Date(dateStr + "T00:00:00");
+  return Math.round((d - today) / 86400000);
+}
+function batchListHtml(p) {
+  var list = batchesOf(p.id);
+  if (!list.length) return "";
+  var rows = list.map(function (b) {
+    var cls = "exp-none", label;
+    if (b.expiry_date) {
+      var d = daysUntil(b.expiry_date);
+      cls = d < 0 ? "exp-past" : d <= 30 ? "exp-soon" : "exp-ok";
+      label = b.expiry_date + (d < 0 ? (currentLang === "zh" ? "（已過期）" : " (expired)") : d <= 30 ? (currentLang === "zh" ? "（剩" + d + "天）" : " (" + d + "d)") : "");
+    } else {
+      label = currentLang === "zh" ? "未設效期" : "No expiry";
+    }
+    var adminBtns = isAdmin
+      ? '<button class="batch-mini" onclick="openBatchEdit(' + b.id + ')" title="編輯">✎</button><button class="batch-mini del" onclick="deleteBatch(' + b.id + ')" title="刪除">✕</button>'
+      : "";
+    return '<div class="batch-item"><span class="exp-dot ' + cls + '"></span>' +
+      '<span class="batch-exp">' + esc(label) + "</span>" +
+      '<span class="batch-qty">' + b.qty_remaining + "</span>" + adminBtns + "</div>";
+  }).join("");
+  return '<div class="batch-box"><div class="batch-title" data-zh="效期批次" data-en="Batches">效期批次</div>' + rows + "</div>";
 }
 
 function adjustStock(id, delta) {
@@ -805,6 +939,162 @@ async function deleteProduct(id) {
   if (!confirm((currentLang === "zh" ? "確定刪除「" : 'Delete "') + (p ? p.name_zh : id) + (currentLang === "zh" ? "」？此操作無法復原。" : '"?'))) return;
   var res = await sb.rpc("delete_product", { p_password: currentPwd, p_id: id });
   if (!res.error) { products = products.filter(function (x) { return x.id !== id; }); render(); } else adminErr(res.error);
+}
+
+// ---- batches / expiry / stock count ----
+async function reloadCleaningData() {
+  var pr = await sb.from("products").select("*").order("sort_order"); if (!pr.error) products = pr.data || [];
+  var bt = await sb.from("product_batches").select("*").order("expiry_date", { ascending: true }); if (!bt.error) batches = bt.data || [];
+  var mv = await sb.from("stock_movements").select("*").eq("kind", "out").order("happened_on", { ascending: false }); if (!mv.error) movements = mv.data || [];
+  render();
+}
+function openReceive(productId) {
+  batchProductId = productId;
+  var p = products.find(function (x) { return x.id === productId; });
+  document.getElementById("rcSub").textContent = p ? p.name_zh : "";
+  document.getElementById("rcError").style.display = "none";
+  document.getElementById("rcQty").value = "1";
+  document.getElementById("rcReceived").value = new Date().toISOString().slice(0, 10);
+  document.getElementById("rcExpiry").value = "";
+  document.getElementById("rcNote").value = "";
+  document.getElementById("receiveModal").classList.add("show");
+  applyLang();
+}
+function closeReceive() { document.getElementById("receiveModal").classList.remove("show"); }
+async function saveReceive() {
+  var btn = document.getElementById("rcSaveBtn"), errEl = document.getElementById("rcError");
+  errEl.style.display = "none";
+  var qty = Number(document.getElementById("rcQty").value);
+  if (!qty || qty <= 0) { errEl.textContent = currentLang === "zh" ? "數量要大於 0" : "Qty must be > 0"; errEl.style.display = "block"; return; }
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("receive_batch", {
+    p_password: currentPwd, p_product_id: batchProductId, p_qty: qty,
+    p_expiry: document.getElementById("rcExpiry").value || null,
+    p_received: document.getElementById("rcReceived").value || null,
+    p_note: document.getElementById("rcNote").value.trim() || null,
+  });
+  btn.textContent = currentLang === "zh" ? "進貨" : "Receive"; btn.disabled = false;
+  if (!res.error) { closeReceive(); await reloadCleaningData(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+function openCount(productId) {
+  batchProductId = productId;
+  var p = products.find(function (x) { return x.id === productId; });
+  var cur = Number(p ? p.stock : 0);
+  document.getElementById("ctSub").textContent = p ? (p.name_zh + (currentLang === "zh" ? "　目前帳面：" + cur : "　now: " + cur)) : "";
+  document.getElementById("ctError").style.display = "none";
+  document.getElementById("ctActual").value = cur;
+  document.getElementById("ctDate").value = new Date().toISOString().slice(0, 10);
+  document.getElementById("ctNote").value = "";
+  document.getElementById("ctActual").oninput = updateCountHint;
+  updateCountHint();
+  document.getElementById("countModal").classList.add("show");
+  applyLang();
+}
+function updateCountHint() {
+  var p = products.find(function (x) { return x.id === batchProductId; });
+  var cur = Number(p ? p.stock : 0);
+  var actual = Number(document.getElementById("ctActual").value);
+  var hint = document.getElementById("ctHint");
+  if (isNaN(actual)) { hint.textContent = ""; return; }
+  var diff = cur - actual;
+  if (diff > 0) hint.textContent = currentLang === "zh" ? "→ 記為用掉 " + diff + "（自最早到期批次扣）" : "→ usage " + diff;
+  else if (diff < 0) hint.textContent = currentLang === "zh" ? "→ 增加 " + (-diff) + "（正向調整）" : "→ +" + (-diff);
+  else hint.textContent = currentLang === "zh" ? "→ 無變化" : "→ no change";
+}
+function closeCount() { document.getElementById("countModal").classList.remove("show"); }
+async function saveCount() {
+  var btn = document.getElementById("ctSaveBtn"), errEl = document.getElementById("ctError");
+  errEl.style.display = "none";
+  var actual = Number(document.getElementById("ctActual").value);
+  if (isNaN(actual) || actual < 0) { errEl.textContent = currentLang === "zh" ? "請填有效數字" : "Invalid number"; errEl.style.display = "block"; return; }
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("stock_count", {
+    p_password: currentPwd, p_product_id: batchProductId, p_actual: actual,
+    p_date: document.getElementById("ctDate").value || null,
+    p_note: document.getElementById("ctNote").value.trim() || null,
+  });
+  btn.textContent = currentLang === "zh" ? "確認盤點" : "Confirm"; btn.disabled = false;
+  if (!res.error) { closeCount(); await reloadCleaningData(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+function openBatchEdit(batchId) {
+  editBatchId = batchId;
+  var b = batches.find(function (x) { return x.id === batchId; });
+  if (!b) return;
+  document.getElementById("beError").style.display = "none";
+  document.getElementById("beQty").value = b.qty_remaining;
+  document.getElementById("beReceived").value = b.received_date || "";
+  document.getElementById("beExpiry").value = b.expiry_date || "";
+  document.getElementById("beNote").value = b.note || "";
+  document.getElementById("batchModal").classList.add("show");
+  applyLang();
+}
+function closeBatchEdit() { document.getElementById("batchModal").classList.remove("show"); }
+async function saveBatchEdit() {
+  var btn = document.getElementById("beSaveBtn"), errEl = document.getElementById("beError");
+  errEl.style.display = "none";
+  var qty = Number(document.getElementById("beQty").value);
+  if (isNaN(qty) || qty < 0) { errEl.textContent = currentLang === "zh" ? "數量無效" : "Invalid qty"; errEl.style.display = "block"; return; }
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("update_batch", {
+    p_password: currentPwd, p_batch_id: editBatchId, p_qty_remaining: qty,
+    p_expiry: document.getElementById("beExpiry").value || null,
+    p_received: document.getElementById("beReceived").value || null,
+    p_note: document.getElementById("beNote").value.trim() || null,
+  });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) { closeBatchEdit(); await reloadCleaningData(); }
+  else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
+}
+async function deleteBatch(batchId) {
+  if (!confirm(currentLang === "zh" ? "刪除此批次？（記為丟棄，不計入用量）" : "Delete this batch? (disposal, not usage)")) return;
+  var res = await sb.rpc("delete_batch", { p_password: currentPwd, p_batch_id: batchId });
+  if (!res.error) { await reloadCleaningData(); } else adminErr(res.error);
+}
+
+// ============================================================================
+//  Usage report (月 / 季 / 年)
+// ============================================================================
+function setReportPeriod(pd) { reportPeriod = pd; render(); }
+function renderReport() {
+  var labels = { month: { zh: "月", en: "Month" }, quarter: { zh: "季", en: "Quarter" }, year: { zh: "年", en: "Year" } };
+  var controls = '<div class="report-controls">' + ["month", "quarter", "year"].map(function (pd) {
+    return '<button class="period-btn' + (reportPeriod === pd ? " active" : "") + '" onclick="setReportPeriod(\'' + pd + '\')">' +
+      (currentLang === "zh" ? labels[pd].zh : labels[pd].en) + "</button>";
+  }).join("") + "</div>";
+  if (!movements.length) return controls + emptyState("📊", "尚無用量記錄（盤點後就會有）", "No usage yet — do a stock count first");
+
+  function keyOf(dateStr) {
+    var d = new Date(dateStr + "T00:00:00"), y = d.getFullYear();
+    if (reportPeriod === "year") return "" + y;
+    if (reportPeriod === "quarter") return y + " Q" + (Math.floor(d.getMonth() / 3) + 1);
+    return y + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+  var periods = {}, byProd = {};
+  movements.forEach(function (m) {
+    var k = keyOf(m.happened_on); periods[k] = 1;
+    byProd[m.product_id] = byProd[m.product_id] || {};
+    byProd[m.product_id][k] = (byProd[m.product_id][k] || 0) + m.qty;
+  });
+  var pkeys = Object.keys(periods).sort().reverse();
+  var prodIds = Object.keys(byProd).map(Number);
+  function prodName(id) { var p = products.find(function (x) { return x.id === id; }); return p ? p.name_zh : "#" + id; }
+
+  var head = "<tr><th>" + (currentLang === "zh" ? "產品" : "Product") + "</th>" +
+    pkeys.map(function (k) { return "<th>" + esc(k) + "</th>"; }).join("") +
+    "<th>" + (currentLang === "zh" ? "合計" : "Total") + "</th></tr>";
+  var rows = prodIds.map(function (id) {
+    var total = 0;
+    var tds = pkeys.map(function (k) { var q = byProd[id][k] || 0; total += q; return "<td>" + (q || "") + "</td>"; }).join("");
+    return "<tr><td>" + esc(prodName(id)) + "</td>" + tds + "<td><b>" + total + "</b></td></tr>";
+  }).join("");
+  var colTotals = {}, grand = 0;
+  pkeys.forEach(function (k) { var s = 0; prodIds.forEach(function (id) { s += byProd[id][k] || 0; }); colTotals[k] = s; grand += s; });
+  var totalRow = '<tr class="total-row"><td>' + (currentLang === "zh" ? "總計" : "Total") + "</td>" +
+    pkeys.map(function (k) { return "<td>" + colTotals[k] + "</td>"; }).join("") + "<td>" + grand + "</td></tr>";
+
+  return controls + '<div class="report-scroll"><table class="report-table"><thead>' + head + "</thead><tbody>" + rows + totalRow + "</tbody></table></div>";
 }
 
 // ============================================================================
