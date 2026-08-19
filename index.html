@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>清潔劑類目錄 Chemical Product Catalog</title>
+<title>酒店後勤系統 Hotel Back-of-House</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -133,6 +133,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 .module-btn:hover { border-color:#0f3460; }
 .module-btn.active { background:#2c5364; color:#fff; border-color:#2c5364; }
 
+/* Search bar */
+.search-bar { background:#fff; padding:10px 16px; border-bottom:1px solid #eee; display:flex; justify-content:center; }
+.search-wrap { position:relative; width:100%; max-width:520px; }
+.search-bar input { width:100%; padding:9px 38px 9px 16px; border:2px solid #e8e8e8; border-radius:22px; font-size:14px; font-family:inherit; }
+.search-bar input:focus { outline:none; border-color:#2c5364; }
+.search-clear { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:#eee; color:#888; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:14px; line-height:1; }
+.search-clear:hover { background:#ddd; }
+
+/* Summary + disabled section */
+.summary-line { padding:14px 6px 2px; font-size:14px; color:#5a6b7a; font-weight:600; }
+.disabled-head { border-left:5px solid #95a5a6 !important; background:#f4f4f4 !important; }
+
 /* Empty state */
 .empty-state { text-align:center; padding:50px 20px; color:#bbb; }
 .empty-state .ico { font-size:46px; opacity:0.4; display:block; margin-bottom:10px; }
@@ -205,6 +217,13 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
   <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
   <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
+</div>
+
+<div class="search-bar">
+  <div class="search-wrap">
+    <input id="searchInput" oninput="onSearch(this.value)" data-zh-placeholder="🔍 搜尋…" data-en-placeholder="🔍 Search…" placeholder="🔍 搜尋…">
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none">✕</button>
+  </div>
 </div>
 
 <div class="container" id="container">
@@ -421,6 +440,8 @@ var equipMaint = [];
 var editProductId = null, editVacuumId = null, editToolId = null, editEquipmentId = null;
 var maintKind = null, maintTargetId = null;
 var formImages = { pf: null, vf: null, tf: null, ef: null };
+var formImagePending = { pf: null, vf: null, tf: null, ef: null };
+var searchQuery = "";
 
 var MODULE_ADD_LABEL = {
   cleaning:  { zh: "＋ 新增產品", en: "＋ Add product" },
@@ -480,6 +501,72 @@ function emptyState(ico, zh, en) {
   return '<div class="empty-state"><span class="ico">' + ico + '</span><div data-zh="' + esc(zh) + '" data-en="' + esc(en) + '">' + esc(zh) + "</div></div>";
 }
 
+// ---- image pick + auto-resize (shared by all forms) ----
+function onPickImage(e, prefix) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var preview = document.getElementById(prefix + "ImgPreview");
+  if (preview) preview.innerHTML = '<span class="no-img">⏳</span>';
+  formImagePending[prefix] = resizeImage(file, 1000, 0.82).then(function (dataUrl) {
+    if (dataUrl) {
+      formImages[prefix] = dataUrl;
+      if (preview) preview.innerHTML = '<img src="' + dataUrl + '">';
+    }
+  }).catch(function () {});
+}
+function resizeImage(file, maxDim, quality) {
+  return new Promise(function (resolve) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = reader.result;
+      var img = new Image();
+      img.onload = function () {
+        var w = img.width, h = img.height;
+        if (!w || !h) { resolve(dataUrl); return; }
+        if (w > maxDim || h > maxDim) {
+          if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        try {
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch (err) { resolve(dataUrl); }
+      };
+      img.onerror = function () { resolve(dataUrl); };
+      img.src = dataUrl;
+    };
+    reader.onerror = function () { resolve(null); };
+    reader.readAsDataURL(file);
+  });
+}
+async function awaitImage(prefix) {
+  if (formImagePending[prefix]) { await formImagePending[prefix]; formImagePending[prefix] = null; }
+}
+
+// ---- search ----
+function onSearch(q) {
+  searchQuery = (q || "").trim().toLowerCase();
+  document.getElementById("searchClear").style.display = searchQuery ? "block" : "none";
+  render();
+}
+function clearSearch() {
+  searchQuery = "";
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchClear").style.display = "none";
+  render();
+}
+function matchQuery(fields) {
+  if (!searchQuery) return true;
+  return fields.some(function (f) { return f && String(f).toLowerCase().indexOf(searchQuery) >= 0; });
+}
+function searchHeader(n) {
+  return '<div class="summary-line">' +
+    (currentLang === "zh" ? "搜尋「" + esc(searchQuery) + "」　·　" + n + " 筆" : 'Search "' + esc(searchQuery) + '" · ' + n + " results") + "</div>";
+}
+function noResult() { return emptyState("🔍", "找不到符合的項目", "No matching items"); }
+
 // ============================================================================
 //  Render dispatch
 // ============================================================================
@@ -502,7 +589,13 @@ function render() {
 
   applyLang();
 }
-function setModule(m) { currentModule = m; render(); }
+function setModule(m) {
+  currentModule = m;
+  searchQuery = "";
+  var si = document.getElementById("searchInput"); if (si) si.value = "";
+  var sc = document.getElementById("searchClear"); if (sc) sc.style.display = "none";
+  render();
+}
 
 function applyLang() {
   var lang = currentLang;
@@ -523,9 +616,25 @@ function setLang(lang) { currentLang = lang; render(); }
 // ============================================================================
 function renderCleaning() {
   if (!products.length) return emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
+
+  if (searchQuery) {
+    var hits = products.filter(function (p) { return matchQuery([p.name_zh, p.name_en, p.subname_zh, p.subname_en]); });
+    return searchHeader(hits.length) +
+      (hits.length ? '<section class="category-section"><div class="products-grid">' + hits.map(cleaningCard).join("") + "</div></section>" : noResult());
+  }
+
+  var active = products.filter(function (p) { return p.status !== "停用"; });
+  var disabled = products.filter(function (p) { return p.status === "停用"; });
+
+  var summary = '<div class="summary-line">' +
+    (currentLang === "zh"
+      ? "共 " + products.length + " 款　·　啟用 " + active.length + " 款　·　停用 " + disabled.length + " 款"
+      : products.length + " items · " + active.length + " live · " + disabled.length + " disabled") + "</div>";
+
   var nav = '<nav class="nav-bar">';
   categories.forEach(function (c) {
-    var count = products.filter(function (p) { return p.category_id === c.id; }).length;
+    var count = active.filter(function (p) { return p.category_id === c.id; }).length;
+    if (!count) return;
     nav += '<a href="#' + slug(c) + '" class="nav-item" style="--cat-color:' + esc(c.color) + '">' +
       esc(c.icon) + ' <span data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) +
       '</span> <span class="nav-count">' + count + "</span></a>";
@@ -534,7 +643,7 @@ function renderCleaning() {
 
   var body = "";
   categories.forEach(function (c) {
-    var items = products.filter(function (p) { return p.category_id === c.id; });
+    var items = active.filter(function (p) { return p.category_id === c.id; });
     if (!items.length) return;
     var typeWord = currentLang === "zh" ? " 種" : " types";
     body += '<section id="' + slug(c) + '" class="category-section">' +
@@ -544,7 +653,17 @@ function renderCleaning() {
       '<span class="cat-subtitle">' + esc(c.name_en) + " — " + items.length + typeWord + "</span></div></div></div>" +
       '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div></section>";
   });
-  return nav + body;
+
+  var disabledSection = "";
+  if (disabled.length) {
+    disabledSection = '<section class="category-section">' +
+      '<div class="category-header disabled-head"><div class="cat-title"><span class="cat-icon">🚫</span><div>' +
+      '<h2 data-zh="停用產品" data-en="Disabled products">停用產品</h2>' +
+      '<span class="cat-subtitle">' + disabled.length + (currentLang === "zh" ? " 款" : " items") + "</span></div></div></div>" +
+      '<div class="products-grid">' + disabled.map(cleaningCard).join("") + "</div></section>";
+  }
+
+  return summary + nav + body + disabledSection;
 }
 
 function cleaningCard(p) {
@@ -654,6 +773,7 @@ async function saveProductForm() {
   errEl.style.display = "none";
   var nameZh = document.getElementById("pfNameZh").value.trim();
   if (!nameZh) { errEl.textContent = currentLang === "zh" ? "請填寫中文名稱" : "Name (ZH) required"; errEl.style.display = "block"; return; }
+  await awaitImage("pf");
   var rinseYes = document.getElementById("pfRinse").value === "yes";
   var payload = {
     category_id: document.getElementById("pfCategory").value,
@@ -692,6 +812,11 @@ async function deleteProduct(id) {
 // ============================================================================
 function renderVacuum() {
   if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
+  if (searchQuery) {
+    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code]); });
+    return searchHeader(hits.length) +
+      (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(vacCard).join("") + "</div></section>" : noResult());
+  }
   var groups = {};
   vacuums.forEach(function (v) {
     var f = v.floor_code && v.floor_code.trim() ? v.floor_code : (currentLang === "zh" ? "未指定樓層" : "No floor");
@@ -776,6 +901,7 @@ async function saveVacuumForm() {
   errEl.style.display = "none";
   var model = document.getElementById("vfModel").value.trim();
   if (!model) { errEl.textContent = currentLang === "zh" ? "請填寫型號" : "Model required"; errEl.style.display = "block"; return; }
+  await awaitImage("vf");
   var payload = {
     model: model,
     brand: document.getElementById("vfBrand").value.trim(),
@@ -849,7 +975,27 @@ async function deleteMaint(kind, id) {
 // ============================================================================
 function renderTool() {
   if (!tools.length) return emptyState("🧹", "尚無清潔工具，登入後可新增", "No tools yet");
-  return '<section class="category-section"><div class="products-grid">' + tools.map(toolCard).join("") + "</div></section>";
+  if (searchQuery) {
+    var hits = tools.filter(function (t) { return matchQuery([t.name, t.notes]); });
+    return searchHeader(hits.length) +
+      (hits.length ? '<section class="category-section"><div class="products-grid">' + hits.map(toolCard).join("") + "</div></section>" : noResult());
+  }
+  var active = tools.filter(function (t) { return t.status !== "停用"; });
+  var disabled = tools.filter(function (t) { return t.status === "停用"; });
+  var summary = '<div class="summary-line">' +
+    (currentLang === "zh"
+      ? "共 " + tools.length + " 款　·　啟用 " + active.length + " 款　·　停用 " + disabled.length + " 款"
+      : tools.length + " items · " + active.length + " live · " + disabled.length + " disabled") + "</div>";
+  var body = active.length ? '<section class="category-section"><div class="products-grid">' + active.map(toolCard).join("") + "</div></section>" : "";
+  var disabledSection = "";
+  if (disabled.length) {
+    disabledSection = '<section class="category-section">' +
+      '<div class="category-header disabled-head"><div class="cat-title"><span class="cat-icon">🚫</span><div>' +
+      '<h2 data-zh="停用工具" data-en="Disabled tools">停用工具</h2>' +
+      '<span class="cat-subtitle">' + disabled.length + (currentLang === "zh" ? " 款" : " items") + "</span></div></div></div>" +
+      '<div class="products-grid">' + disabled.map(toolCard).join("") + "</div></section>";
+  }
+  return summary + body + disabledSection;
 }
 function toolCard(t) {
   var s = Number(t.stock);
@@ -924,6 +1070,7 @@ async function saveToolForm() {
   errEl.style.display = "none";
   var name = document.getElementById("tfName").value.trim();
   if (!name) { errEl.textContent = currentLang === "zh" ? "請填寫名稱" : "Name required"; errEl.style.display = "block"; return; }
+  await awaitImage("tf");
   var payload = {
     name: name,
     stock: document.getElementById("tfStock").value,
@@ -950,6 +1097,11 @@ async function deleteTool(id) {
 // ============================================================================
 function renderEquipment() {
   if (!equipment.length) return emptyState("🧰", "尚無設備，登入後可新增", "No equipment yet");
+  if (searchQuery) {
+    var hits = equipment.filter(function (e) { return matchQuery([e.type, e.model, e.brand, e.floor_code]); });
+    return searchHeader(hits.length) +
+      (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(equipCard).join("") + "</div></section>" : noResult());
+  }
   var groups = {};
   equipment.forEach(function (e) {
     var ty = e.type && e.type.trim() ? e.type : (currentLang === "zh" ? "其他" : "Other");
@@ -1040,6 +1192,7 @@ async function saveEquipForm() {
   errEl.style.display = "none";
   var type = document.getElementById("efType").value.trim();
   if (!type) { errEl.textContent = currentLang === "zh" ? "請填寫類型" : "Type required"; errEl.style.display = "block"; return; }
+  await awaitImage("ef");
   var payload = {
     type: type,
     model: document.getElementById("efModel").value.trim(),
