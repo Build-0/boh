@@ -1465,7 +1465,8 @@ function renderEquipment() {
     var ty = e.type && e.type.trim() ? e.type : (currentLang === "zh" ? "其他" : "Other");
     (groups[ty] = groups[ty] || []).push(e);
   });
-  var types = Object.keys(groups).sort();
+  var types = Object.keys(groups).sort(natCmp);
+  Object.keys(groups).forEach(function (ty) { groups[ty].sort(function (a, b) { return natCmp(a.label || a.serial || a.model, b.label || b.serial || b.model); }); });
   var repairing = equipment.filter(function (e) { return e.status === "維修中"; }).length;
   var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
     (currentLang === "zh"
