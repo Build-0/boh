@@ -240,7 +240,6 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
   <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
   <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
   <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
-  <button class="module-btn" data-m="report" onclick="setModule('report')">📊 <span data-zh="用量報表" data-en="Usage">用量報表</span></button>
 </div>
 
 <div class="search-bar">
@@ -530,6 +529,7 @@ var maintKind = null, maintTargetId = null;
 var batchProductId = null;   // product a receive/count/batch-edit targets
 var editBatchId = null;
 var reportPeriod = "month";  // month | quarter | year
+var cleaningView = "products"; // products | report (report lives inside cleaning)
 var formImages = { pf: null, vf: null, tf: null, ef: null };
 var formImagePending = { pf: null, vf: null, tf: null, ef: null };
 var searchQuery = "";
@@ -677,7 +677,7 @@ function render() {
   document.querySelectorAll(".module-btn").forEach(function (b) {
     b.classList.toggle("active", b.getAttribute("data-m") === currentModule);
   });
-  var isReport = currentModule === "report";
+  var isReport = currentModule === "cleaning" && cleaningView === "report";
   var lab = MODULE_ADD_LABEL[currentModule];
   if (lab) {
     var labEl = document.getElementById("addFabLabel");
@@ -691,14 +691,14 @@ function render() {
   if (currentModule === "cleaning") html = renderCleaning();
   else if (currentModule === "vacuum") html = renderVacuum();
   else if (currentModule === "tool") html = renderTool();
-  else if (currentModule === "equipment") html = renderEquipment();
-  else html = renderReport();
+  else html = renderEquipment();
   document.getElementById("container").innerHTML = html;
 
   applyLang();
 }
 function setModule(m) {
   currentModule = m;
+  cleaningView = "products";
   searchQuery = "";
   var si = document.getElementById("searchInput"); if (si) si.value = "";
   var sc = document.getElementById("searchClear"); if (sc) sc.style.display = "none";
@@ -722,12 +722,25 @@ function setLang(lang) { currentLang = lang; render(); }
 // ============================================================================
 //  Module 1 — Cleaning chemicals
 // ============================================================================
+function setCleaningView(v) {
+  cleaningView = v;
+  if (v === "report") { searchQuery = ""; var si = document.getElementById("searchInput"); if (si) si.value = ""; var sc = document.getElementById("searchClear"); if (sc) sc.style.display = "none"; }
+  render();
+}
+function cleaningSubtabs() {
+  return '<div class="report-controls" style="padding:12px 0 2px">' +
+    '<button class="period-btn' + (cleaningView === "products" ? " active" : "") + '" onclick="setCleaningView(\'products\')" data-zh="產品目錄" data-en="Products">產品目錄</button>' +
+    '<button class="period-btn' + (cleaningView === "report" ? " active" : "") + '" onclick="setCleaningView(\'report\')">📊 <span data-zh="用量報表" data-en="Usage report">用量報表</span></button>' +
+    "</div>";
+}
 function renderCleaning() {
-  if (!products.length) return emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
+  var subtabs = cleaningSubtabs();
+  if (cleaningView === "report") return subtabs + renderReport();
+  if (!products.length) return subtabs + emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
 
   if (searchQuery) {
     var hits = products.filter(function (p) { return matchQuery([p.name_zh, p.name_en, p.subname_zh, p.subname_en]); });
-    return searchHeader(hits.length) +
+    return subtabs + searchHeader(hits.length) +
       (hits.length ? '<section class="category-section"><div class="products-grid">' + hits.map(cleaningCard).join("") + "</div></section>" : noResult());
   }
 
@@ -771,7 +784,7 @@ function renderCleaning() {
       '<div class="products-grid">' + disabled.map(cleaningCard).join("") + "</div></section>";
   }
 
-  return summary + nav + body + disabledSection;
+  return subtabs + summary + nav + body + disabledSection;
 }
 
 function cleaningCard(p) {
