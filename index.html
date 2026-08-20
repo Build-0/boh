@@ -120,6 +120,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 .form-modal label { display:block; font-size:12px; font-weight:600; color:#7f8c8d; margin-bottom:4px; }
 .form-modal .img-preview { width:100%; height:120px; border:2px dashed #e0e0e0; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; background:#fafafa; overflow:hidden; }
 .form-modal .img-preview img { max-width:100%; max-height:100%; object-fit:contain; }
+.btn-remove-img { margin:6px 0 12px; padding:5px 12px; border:1.5px solid #E74C3C; background:transparent; color:#E74C3C; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+.btn-remove-img:hover { background:#FDEDEC; }
 
 .status-bar { display:none; background:#27AE60; color:white; text-align:center; padding:8px; font-size:13px; font-weight:500; }
 .status-bar.show { display:block; }
@@ -286,7 +288,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
 
     <label data-zh="圖片" data-en="Image">圖片</label>
     <div class="img-preview" id="pfImgPreview"><span class="no-img">🧴</span></div>
-    <input type="file" id="pfImgFile" accept="image/*" onchange="onPickImage(event)">
+    <input type="file" id="pfImgFile" accept="image/*" onchange="onPickImage(event,'pf')">
+    <button type="button" class="btn-remove-img" onclick="clearFormImage('pf')" data-zh="移除相片" data-en="Remove photo">移除相片</button>
 
     <div class="row2">
       <div><label data-zh="適用範圍（中）" data-en="Applicable (ZH)">適用範圍（中）</label><input id="pfAppZh"></div>
@@ -344,6 +347,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
     <label data-zh="圖片" data-en="Image">圖片</label>
     <div class="img-preview" id="vfImgPreview"><span class="no-img">🌀</span></div>
     <input type="file" id="vfImgFile" accept="image/*" onchange="onPickImage(event,'vf')">
+    <button type="button" class="btn-remove-img" onclick="clearFormImage('vf')" data-zh="移除相片" data-en="Remove photo">移除相片</button>
 
     <label data-zh="備註" data-en="Notes">備註</label>
     <textarea id="vfNotes"></textarea>
@@ -385,6 +389,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
     <label data-zh="圖片" data-en="Image">圖片</label>
     <div class="img-preview" id="tfImgPreview"><span class="no-img">🧹</span></div>
     <input type="file" id="tfImgFile" accept="image/*" onchange="onPickImage(event,'tf')">
+    <button type="button" class="btn-remove-img" onclick="clearFormImage('tf')" data-zh="移除相片" data-en="Remove photo">移除相片</button>
 
     <div class="row2">
       <div><label data-zh="數量" data-en="Stock">數量</label><input type="number" id="tfStock" min="0" value="0"></div>
@@ -433,6 +438,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
     <label data-zh="圖片" data-en="Image">圖片</label>
     <div class="img-preview" id="efImgPreview"><span class="no-img">🧰</span></div>
     <input type="file" id="efImgFile" accept="image/*" onchange="onPickImage(event,'ef')">
+    <button type="button" class="btn-remove-img" onclick="clearFormImage('ef')" data-zh="移除相片" data-en="Remove photo">移除相片</button>
 
     <label data-zh="備註" data-en="Notes">備註</label>
     <textarea id="efNotes"></textarea>
@@ -538,6 +544,7 @@ var batchProductId = null;   // product a receive/count/batch-edit targets
 var editBatchId = null;
 var reportPeriod = "month";  // month | quarter | year
 var cleaningView = "products"; // products | report (report lives inside cleaning)
+var vacFilter = "all";         // all | floors (3-12F) | other
 var formImages = { pf: null, vf: null, tf: null, ef: null };
 var formImagePending = { pf: null, vf: null, tf: null, ef: null };
 var searchQuery = "";
@@ -600,6 +607,7 @@ function esc(s) {
   });
 }
 function slug(cat) { return "cat-" + cat.id; }
+function natCmp(a, b) { return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true, sensitivity: "base" }); }
 function stateText(status, lang) { return status === "停用" ? (lang === "zh" ? "已停用" : "Disabled") : (lang === "zh" ? "上架中" : "Live"); }
 function toggleText(status, lang) {
   return status === "停用" ? (lang === "zh" ? "▶ 啟用" : "▶ Enable") : (lang === "zh" ? "■ 停用" : "■ Disable");
@@ -654,6 +662,13 @@ function resizeImage(file, maxDim, quality) {
 }
 async function awaitImage(prefix) {
   if (formImagePending[prefix]) { await formImagePending[prefix]; formImagePending[prefix] = null; }
+}
+var FORM_ICON = { pf: "🧴", vf: "🌀", tf: "🧹", ef: "🧰" };
+function clearFormImage(prefix) {
+  formImages[prefix] = null;
+  formImagePending[prefix] = null;
+  var f = document.getElementById(prefix + "ImgFile"); if (f) f.value = "";
+  var p = document.getElementById(prefix + "ImgPreview"); if (p) p.innerHTML = '<span class="no-img">' + (FORM_ICON[prefix] || "🖼") + "</span>";
 }
 
 // ---- search ----
@@ -1121,25 +1136,50 @@ function renderReport() {
 // ============================================================================
 //  Module 2 — Vacuums
 // ============================================================================
+function vacIsFloor(fc) { var m = String(fc || "").match(/^(\d+)\s*F/i); return !!(m && +m[1] >= 3 && +m[1] <= 12); }
+function vacFilterMatch(v) {
+  if (vacFilter === "floors") return vacIsFloor(v.floor_code);
+  if (vacFilter === "other") return !vacIsFloor(v.floor_code);
+  return true;
+}
+function setVacFilter(f) { vacFilter = f; render(); }
+function vacFilterBar() {
+  var nAll = vacuums.length;
+  var nFloor = vacuums.filter(function (v) { return vacIsFloor(v.floor_code); }).length;
+  var nOther = nAll - nFloor;
+  var opts = [
+    { k: "all", zh: "全部", en: "All", n: nAll },
+    { k: "floors", zh: "樓層 3-12F", en: "Floors 3-12F", n: nFloor },
+    { k: "other", zh: "其他", en: "Other", n: nOther },
+  ];
+  return '<div class="report-controls" style="padding:12px 0 2px">' + opts.map(function (o) {
+    return '<button class="period-btn' + (vacFilter === o.k ? " active" : "") + '" onclick="setVacFilter(\'' + o.k + '\')">' +
+      (currentLang === "zh" ? o.zh : o.en) + " (" + o.n + ")</button>";
+  }).join("") + "</div>";
+}
 function renderVacuum() {
   if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
+  var bar = vacFilterBar();
+  var base = vacuums.filter(vacFilterMatch);
   if (searchQuery) {
-    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
-    return searchHeader(hits.length) +
+    var hits = base.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
+    return bar + searchHeader(hits.length) +
       (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(vacCard).join("") + "</div></section>" : noResult());
   }
   var groups = {};
-  vacuums.forEach(function (v) {
+  base.forEach(function (v) {
     var f = v.floor_code && v.floor_code.trim() ? v.floor_code : (currentLang === "zh" ? "未指定樓層" : "No floor");
     (groups[f] = groups[f] || []).push(v);
   });
-  var floors = Object.keys(groups).sort();
-  var repairing = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
+  var floors = Object.keys(groups).sort(natCmp);
+  Object.keys(groups).forEach(function (f) { groups[f].sort(function (a, b) { return natCmp(a.label || a.model, b.label || b.model); }); });
+  var repairing = base.filter(function (v) { return v.status === "維修中"; }).length;
   var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
     (currentLang === "zh"
-      ? "共 " + vacuums.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
-      : vacuums.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
-  var html = summary;
+      ? "共 " + base.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
+      : base.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
+  var html = bar + summary;
+  if (!base.length) return bar + emptyState("🌀", "此分類暫無吸塵機", "None in this filter");
   floors.forEach(function (f) {
     html += '<section class="category-section">' +
       '<div class="category-header" style="border-left:5px solid #2E86C1;background:#EBF5FB">' +
