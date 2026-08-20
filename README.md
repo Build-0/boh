@@ -19,6 +19,7 @@
 > 3. `supabase/schema_modules.sql`（吸塵機＋清潔工具）
 > 4. `supabase/schema_equipment.sql`（設備）
 > 5. `supabase/schema_batches.sql`（清潔劑批次效期＋用量統計；會把現有庫存轉成初始批次）
+> 6. `supabase/import_data.sql`（一次性匯入吸塵機 110 台＋設備 113 台及其保養記錄；會自動加 label/serial 欄位並更新 upsert RPC）
 
 ### 清潔劑批次效期 + 用量報表
 - 每個清潔劑 = 多個批次（數量＋到期日）。總庫存＝批次剩餘加總，卡片列出效期明細（快到期橘、過期紅）。

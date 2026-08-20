@@ -322,6 +322,10 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
     <div class="modal-sub" data-zh="每台獨立管理" data-en="Tracked individually">每台獨立管理</div>
 
     <div class="row2">
+      <div><label data-zh="機號（標籤）" data-en="Label">機號（標籤）</label><input id="vfLabel"></div>
+      <div><label data-zh="序號 S/N" data-en="Serial">序號 S/N</label><input id="vfSerial"></div>
+    </div>
+    <div class="row2">
       <div><label data-zh="型號" data-en="Model">型號</label><input id="vfModel"></div>
       <div><label data-zh="品牌" data-en="Brand">品牌</label><input id="vfBrand"></div>
     </div>
@@ -408,6 +412,10 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:#f4f5f7; color:
         <datalist id="equipTypes"></datalist>
       </div>
       <div><label data-zh="型號" data-en="Model">型號</label><input id="efModel"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="機號（標籤）" data-en="Label">機號（標籤）</label><input id="efLabel"></div>
+      <div><label data-zh="序號 S/N" data-en="Serial">序號 S/N</label><input id="efSerial"></div>
     </div>
     <div class="row2">
       <div><label data-zh="品牌" data-en="Brand">品牌</label><input id="efBrand"></div>
@@ -1116,7 +1124,7 @@ function renderReport() {
 function renderVacuum() {
   if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
   if (searchQuery) {
-    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code]); });
+    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
     return searchHeader(hits.length) +
       (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(vacCard).join("") + "</div></section>" : noResult());
   }
@@ -1163,8 +1171,11 @@ function vacCard(v) {
   ) : "";
   return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
     '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
-    '<div class="vac-head"><div class="vac-model">' + esc(v.model) + "</div>" +
-    (v.brand ? '<div class="vac-brand">' + esc(v.brand) + "</div>" : "") +
+    '<div class="vac-head"><div class="vac-model">' + esc(v.label || v.model) + "</div>" +
+    (function () {
+      var sub = [v.label ? v.model : v.brand, v.serial ? "S/N " + v.serial : ""].filter(Boolean).join(" · ");
+      return sub ? '<div class="vac-brand">' + esc(sub) + "</div>" : "";
+    })() +
     '<div class="vac-badges">' +
       (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
       '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
@@ -1187,6 +1198,8 @@ function openVacuumForm(id) {
   var v = editVacuumId == null ? { status: "正常" } : vacuums.find(function (x) { return x.id === editVacuumId; });
   title.setAttribute("data-zh", editVacuumId == null ? "新增吸塵機" : "編輯吸塵機");
   title.setAttribute("data-en", editVacuumId == null ? "Add vacuum" : "Edit vacuum");
+  document.getElementById("vfLabel").value = v.label || "";
+  document.getElementById("vfSerial").value = v.serial || "";
   document.getElementById("vfModel").value = v.model || "";
   document.getElementById("vfBrand").value = v.brand || "";
   document.getElementById("vfFloor").value = v.floor_code || "";
@@ -1208,6 +1221,8 @@ async function saveVacuumForm() {
   var payload = {
     model: model,
     brand: document.getElementById("vfBrand").value.trim(),
+    label: document.getElementById("vfLabel").value.trim(),
+    serial: document.getElementById("vfSerial").value.trim(),
     floor_code: document.getElementById("vfFloor").value.trim(),
     status: document.getElementById("vfStatus").value,
     notes: document.getElementById("vfNotes").value.trim(),
@@ -1401,7 +1416,7 @@ async function deleteTool(id) {
 function renderEquipment() {
   if (!equipment.length) return emptyState("🧰", "尚無設備，登入後可新增", "No equipment yet");
   if (searchQuery) {
-    var hits = equipment.filter(function (e) { return matchQuery([e.type, e.model, e.brand, e.floor_code]); });
+    var hits = equipment.filter(function (e) { return matchQuery([e.type, e.model, e.brand, e.floor_code, e.label, e.serial]); });
     return searchHeader(hits.length) +
       (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(equipCard).join("") + "</div></section>" : noResult());
   }
@@ -1446,11 +1461,15 @@ function equipCard(e) {
       '<button class="mini-btn grey" onclick="deleteEquipment(' + e.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
     "</div>"
   ) : "";
-  var titleLine = (e.model && e.model.trim()) ? e.model : e.type;
+  var titleLine = e.label || (e.model && e.model.trim()) || e.serial || e.type;
+  var subBits = [];
+  if (e.serial && e.serial !== titleLine) subBits.push("S/N " + e.serial);
+  if (e.model && e.model.trim() && e.model !== titleLine) subBits.push(e.model);
+  else if (e.brand) subBits.push(e.brand);
   return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
     '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
     '<div class="vac-head"><div class="vac-model">' + esc(titleLine) + "</div>" +
-    (e.brand ? '<div class="vac-brand">' + esc(e.brand) + "</div>" : "") +
+    (subBits.length ? '<div class="vac-brand">' + esc(subBits.join(" · ")) + "</div>" : "") +
     '<div class="vac-badges">' +
       (e.floor_code ? '<span class="floor-badge">' + esc(e.floor_code) + "</span>" : "") +
       '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
@@ -1479,6 +1498,8 @@ function openEquipmentForm(id) {
   title.setAttribute("data-en", editEquipmentId == null ? "Add equipment" : "Edit equipment");
   document.getElementById("efType").value = e.type || "";
   document.getElementById("efModel").value = e.model || "";
+  document.getElementById("efLabel").value = e.label || "";
+  document.getElementById("efSerial").value = e.serial || "";
   document.getElementById("efBrand").value = e.brand || "";
   document.getElementById("efFloor").value = e.floor_code || "";
   document.getElementById("efStatus").value = e.status || "正常";
@@ -1499,6 +1520,8 @@ async function saveEquipForm() {
   var payload = {
     type: type,
     model: document.getElementById("efModel").value.trim(),
+    label: document.getElementById("efLabel").value.trim(),
+    serial: document.getElementById("efSerial").value.trim(),
     brand: document.getElementById("efBrand").value.trim(),
     floor_code: document.getElementById("efFloor").value.trim(),
     status: document.getElementById("efStatus").value,
