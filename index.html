@@ -235,8 +235,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .module-bar { position:relative; background:transparent; backdrop-filter:none; border-bottom:1px solid var(--line-2); box-shadow:none; padding:9px 54px 9px 12px; justify-content:center; }
 .icon-btn { position:absolute; right:12px; top:50%; transform:translateY(-50%); width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink-2); transition:.15s; }
 .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
-.filter-bar { display:flex; gap:6px; padding:8px 12px; overflow-x:auto; scrollbar-width:none; }
-.filter-bar::-webkit-scrollbar { height:0; }
+.filter-bar { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; }
+.chip-break { flex-basis:100%; height:0; margin:0; }
+.module-btn .mi { font-size:20px; line-height:1; }
+.mod-caption { padding:12px 4px 2px; font-size:13px; color:var(--ink-2); font-weight:700; }
+.mod-caption b { color:var(--ink); }
+.mod-caption .off { color:var(--ink-3); }
+.brand-tag { font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:var(--pill); color:#fff; }
+.brand-tag.nil { background:#2E74C7; } .brand-tag.wet { background:#12A594; } .brand-tag.oth { background:#9aa7b2; }
+.alert-expiry { display:flex; align-items:center; gap:10px; background:var(--warn-bg); border:1px solid #f2c68a; color:#9a5410; padding:11px 14px; border-radius:12px; margin:12px 0 6px; font-size:13.5px; font-weight:700; cursor:pointer; transition:.15s; }
+.alert-expiry:hover { background:#fbe3c4; }
+.alert-expiry .ic { font-size:18px; } .alert-expiry .go { margin-left:auto; font-size:12px; opacity:.85; }
+.tab-alert { background:var(--danger); color:#fff; font-size:10px; font-weight:800; border-radius:var(--pill); padding:0 5px; margin-left:3px; min-width:16px; height:16px; line-height:16px; text-align:center; display:inline-block; }
 .chip { flex:0 0 auto; padding:6px 13px; border-radius:var(--pill); font-size:13px; font-weight:700; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
 .chip:hover { border-color:var(--accent); color:var(--accent); }
 .chip.on { background:linear-gradient(135deg,var(--brand-2),var(--brand-3)); color:#fff; border-color:transparent; }
@@ -298,10 +308,10 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
 <div class="topnav">
   <div class="module-bar" id="moduleBar">
-    <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')">🧴 <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
-    <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
-    <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
-    <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
+    <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')"><span class="mi">🧴</span> <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
+    <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')"><span class="mi">🌀</span> <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
+    <button class="module-btn" data-m="tool" onclick="setModule('tool')"><span class="mi">🧹</span> <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
+    <button class="module-btn" data-m="equipment" onclick="setModule('equipment')"><span class="mi">🧰</span> <span data-zh="設備" data-en="Equipment">設備</span></button>
     <button class="icon-btn" id="searchToggle" onclick="toggleSearch()" title="搜尋">🔍</button>
   </div>
   <div class="filter-bar" id="filterBar"></div>
@@ -766,7 +776,9 @@ function buildFilterChips() {
     h += chipHtml("all", currentLang === "zh" ? "全部" : "All", act.length);
     categories.forEach(function (c) { var n = act.filter(function (p) { return p.category_id === c.id; }).length; if (n) h += chipHtml("cat-" + c.id, (currentLang === "zh" ? c.name_zh : c.name_en) || c.name_zh, n); });
     if (dis) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", dis, "danger");
-    h += '<span class="chip-sep"></span>' + chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
+    var exn = expiringProductIds().length;
+    if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
+    h += '<span class="chip-break"></span>' + chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
   } else if (m === "vacuum") {
     var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
@@ -776,7 +788,7 @@ function buildFilterChips() {
     if (vs) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", vs, "danger");
     var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
     var fkeys = Object.keys(fl).sort(natCmp);
-    if (fkeys.length) h += '<span class="chip-sep"></span>';
+    if (fkeys.length) h += '<span class="chip-break"></span>';
     fkeys.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); });
   } else if (m === "equipment") {
     var en = equipment.filter(function (e) { return e.status !== "報廢"; });
@@ -787,7 +799,7 @@ function buildFilterChips() {
     if (es) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", es, "danger");
     var ty = {}; en.forEach(function (e) { var t = e.type || "其他"; ty[t] = (ty[t] || 0) + 1; });
     var tkeys = Object.keys(ty).sort(natCmp);
-    if (tkeys.length) h += '<span class="chip-sep"></span>';
+    if (tkeys.length) h += '<span class="chip-break"></span>';
     tkeys.forEach(function (t) { h += chipHtml("type-" + t, t, ty[t]); });
   } else if (m === "tool") {
     var ta = tools.filter(function (t) { return t.status !== "停用"; });
@@ -806,6 +818,7 @@ function render() {
     b.classList.toggle("active", b.getAttribute("data-m") === currentModule);
   });
   buildFilterChips();
+  updateExpiryTabBadge();
   var isReport = currentModule === "cleaning" && moduleFilter.cleaning === "report";
   var lab = MODULE_ADD_LABEL[currentModule];
   if (lab) { var labEl = document.getElementById("addFabLabel"); labEl.setAttribute("data-zh", lab.zh); labEl.setAttribute("data-en", lab.en); }
@@ -823,6 +836,14 @@ function setModule(m) {
   currentModule = m;
   if (searchOpen) toggleSearch();
   render();
+}
+function updateExpiryTabBadge() {
+  var btn = document.querySelector('.module-btn[data-m="cleaning"]');
+  if (!btn) return;
+  var n = expiringProductIds().length;
+  var badge = btn.querySelector(".tab-alert");
+  if (n) { if (!badge) { badge = document.createElement("span"); badge.className = "tab-alert"; btn.appendChild(badge); } badge.textContent = n; }
+  else if (badge) { badge.remove(); }
 }
 
 function applyLang() {
@@ -853,14 +874,28 @@ function renderCleaning() {
     var hits = products.filter(function (p) { return matchQuery([p.name_zh, p.name_en, p.subname_zh, p.subname_en]); });
     return hits.length ? '<div class="products-grid" style="margin-top:14px">' + hits.map(cleaningCard).join("") + "</div>" : noResult();
   }
+  var exIds = expiringProductIds();
+  if (f === "expiring") {
+    var exItems = products.filter(function (p) { return exIds.indexOf(p.id) >= 0; });
+    return slimHead(currentLang === "zh" ? "⚠️ 即將到期 / 已過期（1 個月內）" : "⚠️ Expiring (≤30d)", exItems.length, "repair") +
+      '<div class="products-grid">' + exItems.map(cleaningCard).join("") + "</div>";
+  }
+  var actN = products.filter(function (p) { return p.status !== "停用"; }).length;
+  var offN = products.length - actN;
+  var cap = '<div class="mod-caption">' + (currentLang === "zh"
+    ? "清潔劑 共 <b>" + products.length + "</b> 款　·　啟用 <b>" + actN + "</b>　·　<span class=\"off\">停用 " + offN + "</span>"
+    : "<b>" + products.length + "</b> chemicals · <b>" + actN + "</b> active · <span class=\"off\">" + offN + " off</span>") + "</div>";
+  if (exIds.length) cap += '<div class="alert-expiry" onclick="setFilter(\'expiring\')"><span class="ic">⚠️</span><span>' +
+    (currentLang === "zh" ? "有 <b>" + exIds.length + "</b> 款清潔劑即將到期或已過期（1 個月內）" : "<b>" + exIds.length + "</b> chemicals expiring or expired (≤30d)") +
+    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
   if (f === "disabled") {
     var dis = products.filter(function (p) { return p.status === "停用"; });
-    return dis.length ? '<div class="products-grid" style="margin-top:14px">' + dis.map(cleaningCard).join("") + "</div>" : emptyState("🚫", "沒有停用產品", "No disabled products");
+    return cap + (dis.length ? '<div class="products-grid">' + dis.map(cleaningCard).join("") + "</div>" : emptyState("🚫", "沒有停用產品", "No disabled products"));
   }
   if (f.indexOf("cat-") === 0) {
     var cid = +f.slice(4);
     var items = products.filter(function (p) { return p.status !== "停用" && p.category_id === cid; });
-    return '<div class="products-grid" style="margin-top:14px">' + items.map(cleaningCard).join("") + "</div>";
+    return cap + '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div>";
   }
   var body = "";
   categories.forEach(function (c) {
@@ -869,7 +904,7 @@ function renderCleaning() {
     body += slimHead(esc(c.icon) + " " + esc(currentLang === "zh" ? c.name_zh : c.name_en), items.length) +
       '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div>";
   });
-  return body || emptyState("🧴", "尚無啟用產品", "No active products");
+  return cap + (body || emptyState("🧴", "尚無啟用產品", "No active products"));
 }
 
 function cleaningCard(p) {
@@ -912,6 +947,16 @@ function daysUntil(dateStr) {
   var today = new Date(); today.setHours(0, 0, 0, 0);
   var d = new Date(dateStr + "T00:00:00");
   return Math.round((d - today) / 86400000);
+}
+// batches expiring within 30 days (incl. already expired), with stock remaining
+function expiringProductIds() {
+  var ids = {};
+  batches.forEach(function (b) {
+    if (!b.expiry_date || Number(b.qty_remaining) <= 0) return;
+    var d = daysUntil(b.expiry_date);
+    if (d !== null && d <= 30) ids[b.product_id] = 1;
+  });
+  return Object.keys(ids).map(Number);
 }
 function batchListHtml(p) {
   var list = batchesOf(p.id);
@@ -1081,10 +1126,12 @@ function openCount(productId) {
   var cur = Number(p ? p.stock : 0);
   document.getElementById("ctSub").textContent = p ? (p.name_zh + (currentLang === "zh" ? "　目前帳面：" + cur : "　now: " + cur)) : "";
   document.getElementById("ctError").style.display = "none";
-  document.getElementById("ctActual").value = cur;
+  var ct = document.getElementById("ctActual");
+  ct.value = "";
+  ct.placeholder = (currentLang === "zh" ? "目前 " : "now ") + cur;
   document.getElementById("ctDate").value = new Date().toISOString().slice(0, 10);
   document.getElementById("ctNote").value = "";
-  document.getElementById("ctActual").oninput = updateCountHint;
+  ct.oninput = updateCountHint;
   updateCountHint();
   document.getElementById("countModal").classList.add("show");
   applyLang();
@@ -1204,6 +1251,13 @@ function brandClass(brand) {
   if (b.indexOf("nilfisk") >= 0) return "brand-nil";
   return "";
 }
+function brandTag(brand) {
+  if (!brand) return "";
+  var b = brand.toLowerCase();
+  if (b.indexOf("wetrok") >= 0) return '<span class="brand-tag wet">Wetrok</span>';
+  if (b.indexOf("nilfisk") >= 0) return '<span class="brand-tag nil">Nilfisk</span>';
+  return '<span class="brand-tag oth">' + esc(brand.split(/[ (（]/)[0]) + "</span>";
+}
 function latestMaint(id, arr, key) {
   var d = "";
   arr.forEach(function (m) { if (m[key] === id && m.service_date > d) d = m.service_date; });
@@ -1281,6 +1335,7 @@ function vacCard(v) {
       return sub ? '<div class="vac-brand">' + esc(sub) + "</div>" : "";
     })() +
     '<div class="vac-badges">' +
+      brandTag(v.brand) +
       (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
       '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
     "</div></div></div>" +
