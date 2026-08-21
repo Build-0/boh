@@ -970,18 +970,21 @@ function daysUntil(dateStr) {
   return Math.round((d - today) / 86400000);
 }
 // batches expiring within 30 days (incl. already expired), with stock remaining
+function isActiveProduct(id) { var p = products.find(function (x) { return x.id === id; }); return p && p.status !== "停用"; }
+// expiring batches — only for 上架中 (active) products
 function expiringProductIds() {
   var ids = {};
   batches.forEach(function (b) {
     if (!b.expiry_date || Number(b.qty_remaining) <= 0) return;
+    if (!isActiveProduct(b.product_id)) return;
     var d = daysUntil(b.expiry_date);
     if (d !== null && d <= 30) ids[b.product_id] = 1;
   });
   return Object.keys(ids).map(Number);
 }
-// products at/below their reorder level (min_stock>0 and stock < min_stock)
+// products at/below reorder level — only for 上架中 (active) products
 function lowStockIds() {
-  return products.filter(function (p) { var m = Number(p.min_stock) || 0; return m > 0 && Number(p.stock) < m; }).map(function (p) { return p.id; });
+  return products.filter(function (p) { var m = Number(p.min_stock) || 0; return p.status !== "停用" && m > 0 && Number(p.stock) < m; }).map(function (p) { return p.id; });
 }
 function batchListHtml(p) {
   var list = batchesOf(p.id);
