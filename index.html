@@ -93,6 +93,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .stock-area { text-align:center; flex-shrink:0; }
 .stock-badge { display:inline-block; min-width:40px; padding:5px 11px; border-radius:12px; font-size:16px; font-weight:800; text-align:center; transition:.3s; }
 .stock-label { font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
+.min-label { font-size:10px; color:var(--ink-3); margin-top:2px; font-weight:700; background:var(--surface-2); border-radius:6px; padding:1px 6px; display:inline-block; }
+.min-label.below { color:var(--danger); background:var(--danger-bg); }
 .stock-loading { background:var(--surface-3); color:var(--ink-3); }
 .stock-ok { background:var(--ok-bg); color:var(--ok); }
 .stock-low { background:var(--warn-bg); color:var(--warn); }
@@ -954,7 +956,9 @@ function cleaningCard(p) {
       '<div class="product-name-sub" data-zh="' + esc(p.subname_zh) + '" data-en="' + esc(p.subname_en) + '">' + esc(p.subname_zh) + "</div>" +
     "</div>" +
     '<div class="stock-area"><div class="stock-badge ' + stockClass + '" id="stock-' + p.id + '">' + s + "</div>" +
-    '<div class="stock-label"' + (below ? ' style="color:var(--danger);font-weight:800"' : "") + ">" + esc(stockLbl) + "</div></div></div>" +
+    '<div class="stock-label"' + (below ? ' style="color:var(--danger);font-weight:800"' : "") + ">" + esc(stockLbl) + "</div>" +
+    (minS > 0 ? '<div class="min-label' + (below ? " below" : "") + '">' + (currentLang === "zh" ? "最低 " : "min ") + minS + "</div>" : "") +
+    "</div></div>" +
     '<table class="detail-table">' +
       '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td><td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
       '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td><td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
