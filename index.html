@@ -230,6 +230,42 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .lightbox img { max-width:96%; max-height:92%; object-fit:contain; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
 .lightbox .lb-close { position:absolute; top:18px; right:22px; color:#fff; font-size:30px; font-weight:300; cursor:pointer; line-height:1; opacity:.85; }
 
+/* ---------- Compact sticky nav (module tabs + filter chips + search) ---------- */
+.topnav { position:sticky; top:0; z-index:130; background:rgba(255,255,255,.96); backdrop-filter:blur(12px); box-shadow:0 2px 12px rgba(20,35,48,.07); border-bottom:1px solid var(--line); }
+.module-bar { position:relative; background:transparent; backdrop-filter:none; border-bottom:1px solid var(--line-2); box-shadow:none; padding:9px 54px 9px 12px; justify-content:center; }
+.icon-btn { position:absolute; right:12px; top:50%; transform:translateY(-50%); width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink-2); transition:.15s; }
+.icon-btn:hover { border-color:var(--accent); color:var(--accent); }
+.filter-bar { display:flex; gap:6px; padding:8px 12px; overflow-x:auto; scrollbar-width:none; }
+.filter-bar::-webkit-scrollbar { height:0; }
+.chip { flex:0 0 auto; padding:6px 13px; border-radius:var(--pill); font-size:13px; font-weight:700; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover { border-color:var(--accent); color:var(--accent); }
+.chip.on { background:linear-gradient(135deg,var(--brand-2),var(--brand-3)); color:#fff; border-color:transparent; }
+.chip .c-n { font-size:11px; font-weight:800; background:rgba(20,35,48,.07); padding:0 6px; border-radius:var(--pill); color:var(--ink-2); }
+.chip.on .c-n { background:rgba(255,255,255,.26); color:#fff; }
+.chip.warn { color:var(--warn); border-color:var(--warn-bg); background:var(--warn-bg); } .chip.warn.on { background:var(--warn); color:#fff; }
+.chip.danger { color:var(--ink-3); } .chip.danger.on { background:var(--ink-3); color:#fff; border-color:transparent; }
+.chip.report.on { background:linear-gradient(135deg,#5a3ea8,#7d5fd0); }
+.chip-sep { flex:0 0 auto; width:1px; background:var(--line); margin:4px 2px; }
+.search-row { display:none; padding:8px 12px; gap:8px; }
+.search-row.show { display:flex; }
+.search-row input { flex:1; padding:9px 15px; border:1px solid var(--accent); border-radius:var(--pill); font-size:14px; font-family:inherit; background:#fff; box-shadow:0 0 0 3px rgba(31,111,124,.1); }
+.search-row input:focus { outline:none; }
+.search-close { width:38px; flex:0 0 auto; border:1px solid var(--line); background:var(--surface-2); border-radius:50%; cursor:pointer; font-size:14px; color:var(--ink-2); }
+
+/* slim group header (when showing all, grouped) */
+.slim-head { display:flex; align-items:center; gap:8px; margin:18px 2px 10px; font-size:13px; font-weight:800; color:var(--ink-2); }
+.slim-head .bar { width:4px; height:16px; border-radius:3px; background:var(--brand-3); }
+.slim-head.repair .bar { background:var(--warn); } .slim-head.repair { color:var(--warn); }
+.slim-head.scrap .bar { background:var(--ink-3); } .slim-head.scrap { color:var(--ink-3); }
+.slim-head .n { font-weight:700; color:var(--ink-3); font-size:12px; }
+.brandlegend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-2); font-weight:700; padding:12px 2px 2px; }
+.brandlegend .b { display:inline-flex; align-items:center; gap:6px; }
+.brandlegend .d { width:11px; height:11px; border-radius:50%; }
+
+/* brand accent on vacuum cards */
+.vac-card.brand-nil { border-left:4px solid #2E74C7; }
+.vac-card.brand-wet { border-left:4px solid #12A594; }
+
 /* ---------- Responsive ---------- */
 @media (max-width:700px) {
   .page-header h1 { font-size:21px; }
@@ -260,17 +296,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
 <div class="status-bar" id="statusBar" data-zh="已登入管理員模式 — 可修改資料" data-en="Admin mode — You can edit data">已登入管理員模式 — 可修改資料</div>
 
-<div class="module-bar" id="moduleBar">
-  <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')">🧴 <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
-  <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
-  <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
-  <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
-</div>
-
-<div class="search-bar">
-  <div class="search-wrap">
-    <input id="searchInput" oninput="onSearch(this.value)" data-zh-placeholder="🔍 搜尋…" data-en-placeholder="🔍 Search…" placeholder="🔍 搜尋…">
-    <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none">✕</button>
+<div class="topnav">
+  <div class="module-bar" id="moduleBar">
+    <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')">🧴 <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
+    <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')">🌀 <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
+    <button class="module-btn" data-m="tool" onclick="setModule('tool')">🧹 <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
+    <button class="module-btn" data-m="equipment" onclick="setModule('equipment')">🧰 <span data-zh="設備" data-en="Equipment">設備</span></button>
+    <button class="icon-btn" id="searchToggle" onclick="toggleSearch()" title="搜尋">🔍</button>
+  </div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div class="search-row" id="searchRow">
+    <input id="searchInput" oninput="onSearch(this.value)" data-zh-placeholder="搜尋…" data-en-placeholder="Search…" placeholder="搜尋…">
+    <button class="search-close" onclick="toggleSearch()">✕</button>
   </div>
 </div>
 
@@ -569,8 +606,7 @@ var maintKind = null, maintTargetId = null;
 var batchProductId = null;   // product a receive/count/batch-edit targets
 var editBatchId = null;
 var reportPeriod = "month";  // month | quarter | year
-var cleaningView = "products"; // products | report (report lives inside cleaning)
-var vacFilter = "all";         // all | floors (3-12F) | other
+var moduleFilter = { cleaning: "all", vacuum: "all", tool: "all", equipment: "all" }; // active filter chip per module
 var formImages = { pf: null, vf: null, tf: null, ef: null };
 var formImagePending = { pf: null, vf: null, tf: null, ef: null };
 var searchQuery = "";
@@ -697,27 +733,70 @@ function clearFormImage(prefix) {
   var p = document.getElementById(prefix + "ImgPreview"); if (p) p.innerHTML = '<span class="no-img">' + (FORM_ICON[prefix] || "🖼") + "</span>";
 }
 
-// ---- search ----
-function onSearch(q) {
-  searchQuery = (q || "").trim().toLowerCase();
-  document.getElementById("searchClear").style.display = searchQuery ? "block" : "none";
-  render();
+// ---- search (magnifier toggles a compact input) ----
+var searchOpen = false;
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  document.getElementById("searchRow").classList.toggle("show", searchOpen);
+  document.getElementById("filterBar").style.display = searchOpen ? "none" : "flex";
+  if (searchOpen) { setTimeout(function () { document.getElementById("searchInput").focus(); }, 40); }
+  else { searchQuery = ""; document.getElementById("searchInput").value = ""; render(); }
 }
-function clearSearch() {
-  searchQuery = "";
-  document.getElementById("searchInput").value = "";
-  document.getElementById("searchClear").style.display = "none";
-  render();
-}
+function onSearch(q) { searchQuery = (q || "").trim().toLowerCase(); render(); }
 function matchQuery(fields) {
   if (!searchQuery) return true;
   return fields.some(function (f) { return f && String(f).toLowerCase().indexOf(searchQuery) >= 0; });
 }
-function searchHeader(n) {
-  return '<div class="summary-line">' +
-    (currentLang === "zh" ? "搜尋「" + esc(searchQuery) + "」　·　" + n + " 筆" : 'Search "' + esc(searchQuery) + '" · ' + n + " results") + "</div>";
-}
 function noResult() { return emptyState("🔍", "找不到符合的項目", "No matching items"); }
+
+// ---- filter chips (sticky, per module) ----
+function setFilter(key) { moduleFilter[currentModule] = key; render(); }
+function chipHtml(key, label, count, cls) {
+  var on = moduleFilter[currentModule] === key;
+  var safe = String(key).replace(/'/g, "\\'");
+  return '<button class="chip ' + (cls || "") + (on ? " on" : "") + '" onclick="setFilter(\'' + safe + '\')">' +
+    esc(label) + (count != null ? ' <span class="c-n">' + count + "</span>" : "") + "</button>";
+}
+function floorKey(fc) { return fc && fc.trim() ? fc.trim() : (currentLang === "zh" ? "未指定" : "None"); }
+function buildFilterChips() {
+  var m = currentModule, h = "";
+  if (m === "cleaning") {
+    var act = products.filter(function (p) { return p.status !== "停用"; });
+    var dis = products.length - act.length;
+    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", act.length);
+    categories.forEach(function (c) { var n = act.filter(function (p) { return p.category_id === c.id; }).length; if (n) h += chipHtml("cat-" + c.id, (currentLang === "zh" ? c.name_zh : c.name_en) || c.name_zh, n); });
+    if (dis) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", dis, "danger");
+    h += '<span class="chip-sep"></span>' + chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
+  } else if (m === "vacuum") {
+    var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
+    var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
+    var vs = vacuums.filter(function (v) { return v.status === "報廢"; }).length;
+    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", vn.length);
+    if (vr) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", vr, "warn");
+    if (vs) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", vs, "danger");
+    var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
+    var fkeys = Object.keys(fl).sort(natCmp);
+    if (fkeys.length) h += '<span class="chip-sep"></span>';
+    fkeys.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); });
+  } else if (m === "equipment") {
+    var en = equipment.filter(function (e) { return e.status !== "報廢"; });
+    var er = equipment.filter(function (e) { return e.status === "維修中"; }).length;
+    var es = equipment.filter(function (e) { return e.status === "報廢"; }).length;
+    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", en.length);
+    if (er) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", er, "warn");
+    if (es) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", es, "danger");
+    var ty = {}; en.forEach(function (e) { var t = e.type || "其他"; ty[t] = (ty[t] || 0) + 1; });
+    var tkeys = Object.keys(ty).sort(natCmp);
+    if (tkeys.length) h += '<span class="chip-sep"></span>';
+    tkeys.forEach(function (t) { h += chipHtml("type-" + t, t, ty[t]); });
+  } else if (m === "tool") {
+    var ta = tools.filter(function (t) { return t.status !== "停用"; });
+    var tdd = tools.length - ta.length;
+    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", ta.length);
+    if (tdd) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", tdd, "danger");
+  }
+  document.getElementById("filterBar").innerHTML = h;
+}
 
 // ============================================================================
 //  Render dispatch
@@ -726,15 +805,11 @@ function render() {
   document.querySelectorAll(".module-btn").forEach(function (b) {
     b.classList.toggle("active", b.getAttribute("data-m") === currentModule);
   });
-  var isReport = currentModule === "cleaning" && cleaningView === "report";
+  buildFilterChips();
+  var isReport = currentModule === "cleaning" && moduleFilter.cleaning === "report";
   var lab = MODULE_ADD_LABEL[currentModule];
-  if (lab) {
-    var labEl = document.getElementById("addFabLabel");
-    labEl.setAttribute("data-zh", lab.zh);
-    labEl.setAttribute("data-en", lab.en);
-  }
+  if (lab) { var labEl = document.getElementById("addFabLabel"); labEl.setAttribute("data-zh", lab.zh); labEl.setAttribute("data-en", lab.en); }
   document.getElementById("addFab").style.display = (isAdmin && !isReport) ? "block" : "none";
-  document.querySelector(".search-bar").style.display = isReport ? "none" : "flex";
 
   var html = "";
   if (currentModule === "cleaning") html = renderCleaning();
@@ -742,15 +817,11 @@ function render() {
   else if (currentModule === "tool") html = renderTool();
   else html = renderEquipment();
   document.getElementById("container").innerHTML = html;
-
   applyLang();
 }
 function setModule(m) {
   currentModule = m;
-  cleaningView = "products";
-  searchQuery = "";
-  var si = document.getElementById("searchInput"); if (si) si.value = "";
-  var sc = document.getElementById("searchClear"); if (sc) sc.style.display = "none";
+  if (searchOpen) toggleSearch();
   render();
 }
 
@@ -771,69 +842,34 @@ function setLang(lang) { currentLang = lang; render(); }
 // ============================================================================
 //  Module 1 — Cleaning chemicals
 // ============================================================================
-function setCleaningView(v) {
-  cleaningView = v;
-  if (v === "report") { searchQuery = ""; var si = document.getElementById("searchInput"); if (si) si.value = ""; var sc = document.getElementById("searchClear"); if (sc) sc.style.display = "none"; }
-  render();
-}
-function cleaningSubtabs() {
-  return '<div class="report-controls" style="padding:12px 0 2px">' +
-    '<button class="period-btn' + (cleaningView === "products" ? " active" : "") + '" onclick="setCleaningView(\'products\')" data-zh="產品目錄" data-en="Products">產品目錄</button>' +
-    '<button class="period-btn' + (cleaningView === "report" ? " active" : "") + '" onclick="setCleaningView(\'report\')">📊 <span data-zh="用量報表" data-en="Usage report">用量報表</span></button>' +
-    "</div>";
+function slimHead(label, count, cls) {
+  return '<div class="slim-head ' + (cls || "") + '"><span class="bar"></span>' + label + (count != null ? ' <span class="n">' + count + "</span>" : "") + "</div>";
 }
 function renderCleaning() {
-  var subtabs = cleaningSubtabs();
-  if (cleaningView === "report") return subtabs + renderReport();
-  if (!products.length) return subtabs + emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
-
+  if (!products.length) return emptyState("🧴", "尚無清潔劑資料", "No chemicals yet");
+  var f = moduleFilter.cleaning;
+  if (f === "report") return renderReport();
   if (searchQuery) {
     var hits = products.filter(function (p) { return matchQuery([p.name_zh, p.name_en, p.subname_zh, p.subname_en]); });
-    return subtabs + searchHeader(hits.length) +
-      (hits.length ? '<section class="category-section"><div class="products-grid">' + hits.map(cleaningCard).join("") + "</div></section>" : noResult());
+    return hits.length ? '<div class="products-grid" style="margin-top:14px">' + hits.map(cleaningCard).join("") + "</div>" : noResult();
   }
-
-  var active = products.filter(function (p) { return p.status !== "停用"; });
-  var disabled = products.filter(function (p) { return p.status === "停用"; });
-
-  var summary = '<div class="summary-line">' +
-    (currentLang === "zh"
-      ? "共 " + products.length + " 款　·　啟用 " + active.length + " 款　·　停用 " + disabled.length + " 款"
-      : products.length + " items · " + active.length + " live · " + disabled.length + " disabled") + "</div>";
-
-  var nav = '<nav class="nav-bar">';
-  categories.forEach(function (c) {
-    var count = active.filter(function (p) { return p.category_id === c.id; }).length;
-    if (!count) return;
-    nav += '<a href="#' + slug(c) + '" class="nav-item" style="--cat-color:' + esc(c.color) + '">' +
-      esc(c.icon) + ' <span data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) +
-      '</span> <span class="nav-count">' + count + "</span></a>";
-  });
-  nav += "</nav>";
-
+  if (f === "disabled") {
+    var dis = products.filter(function (p) { return p.status === "停用"; });
+    return dis.length ? '<div class="products-grid" style="margin-top:14px">' + dis.map(cleaningCard).join("") + "</div>" : emptyState("🚫", "沒有停用產品", "No disabled products");
+  }
+  if (f.indexOf("cat-") === 0) {
+    var cid = +f.slice(4);
+    var items = products.filter(function (p) { return p.status !== "停用" && p.category_id === cid; });
+    return '<div class="products-grid" style="margin-top:14px">' + items.map(cleaningCard).join("") + "</div>";
+  }
   var body = "";
   categories.forEach(function (c) {
-    var items = active.filter(function (p) { return p.category_id === c.id; });
+    var items = products.filter(function (p) { return p.status !== "停用" && p.category_id === c.id; });
     if (!items.length) return;
-    var typeWord = currentLang === "zh" ? " 種" : " types";
-    body += '<section id="' + slug(c) + '" class="category-section">' +
-      '<div class="category-header" style="border-left:5px solid ' + esc(c.color) + ";background:" + esc(c.bg) + '">' +
-      '<div class="cat-title"><span class="cat-icon">' + esc(c.icon) + "</span><div>" +
-      '<h2 data-zh="' + esc(c.name_zh) + '" data-en="' + esc(c.name_en) + '">' + esc(c.name_zh) + "</h2>" +
-      '<span class="cat-subtitle">' + esc(c.name_en) + " — " + items.length + typeWord + "</span></div></div></div>" +
-      '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div></section>";
+    body += slimHead(esc(c.icon) + " " + esc(currentLang === "zh" ? c.name_zh : c.name_en), items.length) +
+      '<div class="products-grid">' + items.map(cleaningCard).join("") + "</div>";
   });
-
-  var disabledSection = "";
-  if (disabled.length) {
-    disabledSection = '<section class="category-section">' +
-      '<div class="category-header disabled-head"><div class="cat-title"><span class="cat-icon">🚫</span><div>' +
-      '<h2 data-zh="停用產品" data-en="Disabled products">停用產品</h2>' +
-      '<span class="cat-subtitle">' + disabled.length + (currentLang === "zh" ? " 款" : " items") + "</span></div></div></div>" +
-      '<div class="products-grid">' + disabled.map(cleaningCard).join("") + "</div></section>";
-  }
-
-  return subtabs + summary + nav + body + disabledSection;
+  return body || emptyState("🧴", "尚無啟用產品", "No active products");
 }
 
 function cleaningCard(p) {
@@ -1162,56 +1198,58 @@ function renderReport() {
 // ============================================================================
 //  Module 2 — Vacuums
 // ============================================================================
-function vacIsFloor(fc) { var m = String(fc || "").match(/^(\d+)\s*F/i); return !!(m && +m[1] >= 3 && +m[1] <= 12); }
-function vacFilterMatch(v) {
-  if (vacFilter === "floors") return vacIsFloor(v.floor_code);
-  if (vacFilter === "other") return !vacIsFloor(v.floor_code);
-  return true;
+function brandClass(brand) {
+  var b = (brand || "").toLowerCase();
+  if (b.indexOf("wetrok") >= 0) return "brand-wet";
+  if (b.indexOf("nilfisk") >= 0) return "brand-nil";
+  return "";
 }
-function setVacFilter(f) { vacFilter = f; render(); }
-function vacFilterBar() {
-  var nAll = vacuums.length;
-  var nFloor = vacuums.filter(function (v) { return vacIsFloor(v.floor_code); }).length;
-  var nOther = nAll - nFloor;
-  var opts = [
-    { k: "all", zh: "全部", en: "All", n: nAll },
-    { k: "floors", zh: "樓層 3-12F", en: "Floors 3-12F", n: nFloor },
-    { k: "other", zh: "其他", en: "Other", n: nOther },
-  ];
-  return '<div class="report-controls" style="padding:12px 0 2px">' + opts.map(function (o) {
-    return '<button class="period-btn' + (vacFilter === o.k ? " active" : "") + '" onclick="setVacFilter(\'' + o.k + '\')">' +
-      (currentLang === "zh" ? o.zh : o.en) + " (" + o.n + ")</button>";
-  }).join("") + "</div>";
+function latestMaint(id, arr, key) {
+  var d = "";
+  arr.forEach(function (m) { if (m[key] === id && m.service_date > d) d = m.service_date; });
+  return d;
 }
+function brandLegend() {
+  var nil = vacuums.filter(function (v) { return brandClass(v.brand) === "brand-nil"; }).length;
+  var wet = vacuums.filter(function (v) { return brandClass(v.brand) === "brand-wet"; }).length;
+  var oth = vacuums.length - nil - wet;
+  var b = [];
+  if (nil) b.push('<span class="b"><span class="d" style="background:#2E74C7"></span>Nilfisk ' + nil + "</span>");
+  if (wet) b.push('<span class="b"><span class="d" style="background:#12A594"></span>Wetrok ' + wet + "</span>");
+  if (oth) b.push('<span class="b"><span class="d" style="background:#b3bfca"></span>' + (currentLang === "zh" ? "其他 " : "Other ") + oth + "</span>");
+  return '<div class="brandlegend">' + b.join("") + "</div>";
+}
+function byLabel(a, b) { return natCmp(a.label || a.model || a.serial, b.label || b.model || b.serial); }
+function byMaintDesc(k, arr) { return function (a, b) { return latestMaint(b.id, arr, k).localeCompare(latestMaint(a.id, arr, k)); }; }
 function renderVacuum() {
   if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
-  var bar = vacFilterBar();
-  var base = vacuums.filter(vacFilterMatch);
+  var f = moduleFilter.vacuum;
   if (searchQuery) {
-    var hits = base.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
-    return bar + searchHeader(hits.length) +
-      (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(vacCard).join("") + "</div></section>" : noResult());
+    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
+    return hits.length ? '<div class="vac-grid" style="margin-top:14px">' + hits.map(vacCard).join("") + "</div>" : noResult();
   }
+  if (f === "repair") {
+    var rep = vacuums.filter(function (v) { return v.status === "維修中"; }).sort(byMaintDesc("vacuum_id", vacMaint));
+    return brandLegend() + slimHead(currentLang === "zh" ? "🔧 維修中（近期保養在前）" : "🔧 Repair", rep.length, "repair") + '<div class="vac-grid">' + rep.map(vacCard).join("") + "</div>";
+  }
+  if (f === "scrap") {
+    var scr = vacuums.filter(function (v) { return v.status === "報廢"; }).sort(byLabel);
+    return slimHead(currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", scr.length, "scrap") + '<div class="vac-grid">' + scr.map(vacCard).join("") + "</div>";
+  }
+  if (f.indexOf("floor-") === 0) {
+    var fl = f.slice(6);
+    var items = vacuums.filter(function (v) { return v.status !== "報廢" && floorKey(v.floor_code) === fl; }).sort(byLabel);
+    return brandLegend() + slimHead("🏢 " + esc(fl), items.length) + '<div class="vac-grid">' + items.map(vacCard).join("") + "</div>";
+  }
+  // all: 維修中 pinned first, then floor groups (正常); 報廢 excluded
+  var html = brandLegend();
+  var repAll = vacuums.filter(function (v) { return v.status === "維修中"; }).sort(byMaintDesc("vacuum_id", vacMaint));
+  if (repAll.length) html += slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", repAll.length, "repair") + '<div class="vac-grid">' + repAll.map(vacCard).join("") + "</div>";
   var groups = {};
-  base.forEach(function (v) {
-    var f = v.floor_code && v.floor_code.trim() ? v.floor_code : (currentLang === "zh" ? "未指定樓層" : "No floor");
-    (groups[f] = groups[f] || []).push(v);
-  });
-  var floors = Object.keys(groups).sort(natCmp);
-  Object.keys(groups).forEach(function (f) { groups[f].sort(function (a, b) { return natCmp(a.label || a.model, b.label || b.model); }); });
-  var repairing = base.filter(function (v) { return v.status === "維修中"; }).length;
-  var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
-    (currentLang === "zh"
-      ? "共 " + base.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
-      : base.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
-  var html = bar + summary;
-  if (!base.length) return bar + emptyState("🌀", "此分類暫無吸塵機", "None in this filter");
-  floors.forEach(function (f) {
-    html += '<section class="category-section">' +
-      '<div class="category-header" style="border-left:5px solid #2E86C1;background:#EBF5FB">' +
-      '<div class="cat-title"><span class="cat-icon">🏢</span><div><h2>' + esc(f) + "</h2>" +
-      '<span class="cat-subtitle">' + groups[f].length + (currentLang === "zh" ? " 台" : " units") + "</span></div></div></div>" +
-      '<div class="vac-grid">' + groups[f].map(vacCard).join("") + "</div></section>";
+  vacuums.filter(function (v) { return v.status === "正常"; }).forEach(function (v) { var k = floorKey(v.floor_code); (groups[k] = groups[k] || []).push(v); });
+  Object.keys(groups).sort(natCmp).forEach(function (k) {
+    groups[k].sort(byLabel);
+    html += slimHead("🏢 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(vacCard).join("") + "</div>";
   });
   return html;
 }
@@ -1235,7 +1273,7 @@ function vacCard(v) {
       '<button class="mini-btn grey" onclick="deleteVacuum(' + v.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
     "</div>"
   ) : "";
-  return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
+  return '<div class="vac-card ' + brandClass(v.brand) + " " + (st === "報廢" ? "scrap" : "") + '">' +
     '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
     '<div class="vac-head"><div class="vac-model">' + esc(v.label || v.model) + "</div>" +
     (function () {
@@ -1359,27 +1397,17 @@ async function deleteMaint(kind, id) {
 // ============================================================================
 function renderTool() {
   if (!tools.length) return emptyState("🧹", "尚無清潔工具，登入後可新增", "No tools yet");
+  var f = moduleFilter.tool;
   if (searchQuery) {
     var hits = tools.filter(function (t) { return matchQuery([t.name, t.notes]); });
-    return searchHeader(hits.length) +
-      (hits.length ? '<section class="category-section"><div class="products-grid">' + hits.map(toolCard).join("") + "</div></section>" : noResult());
+    return hits.length ? '<div class="products-grid" style="margin-top:14px">' + hits.map(toolCard).join("") + "</div>" : noResult();
+  }
+  if (f === "disabled") {
+    var dis = tools.filter(function (t) { return t.status === "停用"; });
+    return dis.length ? '<div class="products-grid" style="margin-top:14px">' + dis.map(toolCard).join("") + "</div>" : emptyState("🚫", "沒有停用工具", "No disabled tools");
   }
   var active = tools.filter(function (t) { return t.status !== "停用"; });
-  var disabled = tools.filter(function (t) { return t.status === "停用"; });
-  var summary = '<div class="summary-line">' +
-    (currentLang === "zh"
-      ? "共 " + tools.length + " 款　·　啟用 " + active.length + " 款　·　停用 " + disabled.length + " 款"
-      : tools.length + " items · " + active.length + " live · " + disabled.length + " disabled") + "</div>";
-  var body = active.length ? '<section class="category-section"><div class="products-grid">' + active.map(toolCard).join("") + "</div></section>" : "";
-  var disabledSection = "";
-  if (disabled.length) {
-    disabledSection = '<section class="category-section">' +
-      '<div class="category-header disabled-head"><div class="cat-title"><span class="cat-icon">🚫</span><div>' +
-      '<h2 data-zh="停用工具" data-en="Disabled tools">停用工具</h2>' +
-      '<span class="cat-subtitle">' + disabled.length + (currentLang === "zh" ? " 款" : " items") + "</span></div></div></div>" +
-      '<div class="products-grid">' + disabled.map(toolCard).join("") + "</div></section>";
-  }
-  return summary + body + disabledSection;
+  return active.length ? '<div class="products-grid" style="margin-top:14px">' + active.map(toolCard).join("") + "</div>" : emptyState("🧹", "尚無啟用工具", "No active tools");
 }
 function toolCard(t) {
   var s = Number(t.stock);
@@ -1479,34 +1507,38 @@ async function deleteTool(id) {
 // ============================================================================
 //  Module 4 — Equipment (per-unit, grouped by type, with maintenance)
 // ============================================================================
+function eqKey(e) { return e.label || e.serial || e.model; }
 function renderEquipment() {
   if (!equipment.length) return emptyState("🧰", "尚無設備，登入後可新增", "No equipment yet");
+  var f = moduleFilter.equipment;
   if (searchQuery) {
     var hits = equipment.filter(function (e) { return matchQuery([e.type, e.model, e.brand, e.floor_code, e.label, e.serial]); });
-    return searchHeader(hits.length) +
-      (hits.length ? '<section class="category-section"><div class="vac-grid">' + hits.map(equipCard).join("") + "</div></section>" : noResult());
+    return hits.length ? '<div class="vac-grid" style="margin-top:14px">' + hits.map(equipCard).join("") + "</div>" : noResult();
   }
+  if (f === "repair") {
+    var rep = equipment.filter(function (e) { return e.status === "維修中"; }).sort(byMaintDesc("equipment_id", equipMaint));
+    return slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", rep.length, "repair") + '<div class="vac-grid">' + rep.map(equipCard).join("") + "</div>";
+  }
+  if (f === "scrap") {
+    var scr = equipment.filter(function (e) { return e.status === "報廢"; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
+    return slimHead(currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", scr.length, "scrap") + '<div class="vac-grid">' + scr.map(equipCard).join("") + "</div>";
+  }
+  if (f.indexOf("type-") === 0) {
+    var ty = f.slice(5);
+    var items = equipment.filter(function (e) { return e.status !== "報廢" && (e.type || "其他") === ty; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
+    return slimHead("🧰 " + esc(ty), items.length) + '<div class="vac-grid">' + items.map(equipCard).join("") + "</div>";
+  }
+  // all: 維修中 first, then type groups (正常). 報廢 excluded.
+  var html = "";
+  var repAll = equipment.filter(function (e) { return e.status === "維修中"; }).sort(byMaintDesc("equipment_id", equipMaint));
+  if (repAll.length) html += slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", repAll.length, "repair") + '<div class="vac-grid">' + repAll.map(equipCard).join("") + "</div>";
   var groups = {};
-  equipment.forEach(function (e) {
-    var ty = e.type && e.type.trim() ? e.type : (currentLang === "zh" ? "其他" : "Other");
-    (groups[ty] = groups[ty] || []).push(e);
+  equipment.filter(function (e) { return e.status === "正常"; }).forEach(function (e) { var k = e.type || "其他"; (groups[k] = groups[k] || []).push(e); });
+  Object.keys(groups).sort(natCmp).forEach(function (k) {
+    groups[k].sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
+    html += slimHead("🧰 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(equipCard).join("") + "</div>";
   });
-  var types = Object.keys(groups).sort(natCmp);
-  Object.keys(groups).forEach(function (ty) { groups[ty].sort(function (a, b) { return natCmp(a.label || a.serial || a.model, b.label || b.serial || b.model); }); });
-  var repairing = equipment.filter(function (e) { return e.status === "維修中"; }).length;
-  var summary = '<div class="cat-subtitle" style="padding:0 4px 14px">' +
-    (currentLang === "zh"
-      ? "共 " + equipment.length + " 台" + (repairing ? "，維修中 " + repairing + " 台" : "")
-      : equipment.length + " units" + (repairing ? ", " + repairing + " repairing" : "")) + "</div>";
-  var html = summary;
-  types.forEach(function (ty) {
-    html += '<section class="category-section">' +
-      '<div class="category-header" style="border-left:5px solid #7D3C98;background:#F5EEF8">' +
-      '<div class="cat-title"><span class="cat-icon">🧰</span><div><h2>' + esc(ty) + "</h2>" +
-      '<span class="cat-subtitle">' + groups[ty].length + (currentLang === "zh" ? " 台" : " units") + "</span></div></div></div>" +
-      '<div class="vac-grid">' + groups[ty].map(equipCard).join("") + "</div></section>";
-  });
-  return html;
+  return html || emptyState("🧰", "尚無正常設備", "None");
 }
 function equipCard(e) {
   var img = e.image ? '<img src="' + esc(e.image) + '">' : '<span class="no-img">🧰</span>';
