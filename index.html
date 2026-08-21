@@ -237,7 +237,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
 .filter-bar { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; }
 .chip-break { flex-basis:100%; height:0; margin:0; }
-.module-btn .mi { font-size:20px; line-height:1; }
+.module-btn .mi { font-size:25px; line-height:1; }
 .mod-caption { padding:12px 4px 2px; font-size:13px; color:var(--ink-2); font-weight:700; }
 .mod-caption b { color:var(--ink); }
 .mod-caption .off { color:var(--ink-3); }
@@ -786,8 +786,11 @@ function buildFilterChips() {
     if (vs) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", vs, "danger");
     var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
     var fkeys = Object.keys(fl).sort(natCmp);
-    if (fkeys.length) h += '<span class="chip-break"></span>';
-    fkeys.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); });
+    var isGuest = function (k) { var mm = String(k).match(/^(\d+)\s*F/i); return !!(mm && +mm[1] >= 3 && +mm[1] <= 12); };
+    var f312 = fkeys.filter(isGuest);
+    var others = fkeys.filter(function (k) { return !isGuest(k); });
+    if (f312.length) { h += '<span class="chip-break"></span>'; f312.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); }); }
+    if (others.length) { h += '<span class="chip-break"></span>'; others.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); }); }
   } else if (m === "equipment") {
     var en = equipment.filter(function (e) { return e.status !== "報廢"; });
     var er = equipment.filter(function (e) { return e.status === "維修中"; }).length;
