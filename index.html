@@ -27,8 +27,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
 /* ---------- Header ---------- */
 .page-header { background:linear-gradient(140deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%); color:#fff; padding:26px 22px 22px; text-align:center; position:relative; }
-.page-header h1 { font-size:25px; font-weight:800; letter-spacing:.5px; }
-.page-header .sub { font-size:12px; opacity:.62; margin-top:4px; letter-spacing:1.5px; text-transform:uppercase; }
+.page-header h1 { font-size:33px; font-weight:800; letter-spacing:.5px; }
+.page-header .sub { font-size:15px; opacity:.68; margin-top:6px; letter-spacing:1px; }
 .lang-toggle { position:absolute; top:16px; right:18px; display:flex; border-radius:var(--pill); overflow:hidden; background:rgba(255,255,255,.12); padding:3px; backdrop-filter:blur(4px); }
 .lang-btn { padding:5px 13px; font-size:12px; font-weight:700; cursor:pointer; border:none; background:transparent; color:rgba(255,255,255,.7); font-family:inherit; border-radius:var(--pill); transition:.2s; }
 .lang-btn.active { background:#fff; color:var(--brand-2); }
@@ -237,7 +237,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
 .filter-bar { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; }
 .chip-break { flex-basis:100%; height:0; margin:0; }
-.module-btn .mi { font-size:25px; line-height:1; }
+.module-btn .mi { font-size:30px; line-height:1; }
+.module-btn { padding-top:7px; padding-bottom:7px; }
 .mod-caption { padding:12px 4px 2px; font-size:13px; color:var(--ink-2); font-weight:700; }
 .mod-caption b { color:var(--ink); }
 .mod-caption .off { color:var(--ink-3); }
@@ -278,7 +279,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
 /* ---------- Responsive ---------- */
 @media (max-width:700px) {
-  .page-header h1 { font-size:21px; }
+  .page-header h1 { font-size:27px; }
+  .page-header .sub { font-size:13px; }
   .page-header { padding:22px 18px 18px; }
   .products-grid,.vac-grid { grid-template-columns:1fr; }
   .module-btn { font-size:13px; padding:8px 15px; }
@@ -314,7 +316,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
   </div>
   <div class="filter-bar" id="filterBar"></div>
   <div class="search-row" id="searchRow">
-    <input id="searchInput" oninput="onSearch(this.value)" data-zh-placeholder="搜尋…" data-en-placeholder="Search…" placeholder="搜尋…">
+    <input id="searchInput" type="search" autocomplete="off" oninput="onSearch(this.value)" data-zh-placeholder="搜尋…" data-en-placeholder="Search…" placeholder="搜尋…">
     <button class="search-close" onclick="toggleSearch()">✕</button>
   </div>
 </div>
@@ -376,6 +378,9 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
         </select>
       </div>
       <div><label data-zh="初始庫存" data-en="Stock">初始庫存</label><input type="number" id="pfStock" min="0" value="0"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="最低庫存（低於就提醒補貨，0=不提醒）" data-en="Min stock (alert below; 0=off)">最低庫存（低於就提醒補貨，0=不提醒）</label><input type="number" id="pfMin" min="0" value="0"></div>
     </div>
 
     <div class="modal-btns">
@@ -747,7 +752,7 @@ function toggleSearch() {
   searchOpen = !searchOpen;
   document.getElementById("searchRow").classList.toggle("show", searchOpen);
   document.getElementById("filterBar").style.display = searchOpen ? "none" : "flex";
-  if (searchOpen) { setTimeout(function () { document.getElementById("searchInput").focus(); }, 40); }
+  if (searchOpen) { var si = document.getElementById("searchInput"); si.value = ""; searchQuery = ""; setTimeout(function () { si.focus(); }, 40); }
   else { searchQuery = ""; document.getElementById("searchInput").value = ""; render(); }
 }
 function onSearch(q) { searchQuery = (q || "").trim().toLowerCase(); render(); }
@@ -774,6 +779,8 @@ function buildFilterChips() {
     h += chipHtml("all", currentLang === "zh" ? "全部" : "All", act.length);
     categories.forEach(function (c) { var n = act.filter(function (p) { return p.category_id === c.id; }).length; if (n) h += chipHtml("cat-" + c.id, (currentLang === "zh" ? c.name_zh : c.name_en) || c.name_zh, n); });
     if (dis) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", dis, "danger");
+    var lown = lowStockIds().length;
+    if (lown) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", lown, "danger");
     var exn = expiringProductIds().length;
     if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
     h += '<span class="chip-break"></span>' + chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
@@ -841,7 +848,8 @@ function setModule(m) {
 function updateExpiryTabBadge() {
   var btn = document.querySelector('.module-btn[data-m="cleaning"]');
   if (!btn) return;
-  var n = expiringProductIds().length;
+  var u = {}; expiringProductIds().forEach(function (i) { u[i] = 1; }); lowStockIds().forEach(function (i) { u[i] = 1; });
+  var n = Object.keys(u).length;
   var badge = btn.querySelector(".tab-alert");
   if (n) { if (!badge) { badge = document.createElement("span"); badge.className = "tab-alert"; btn.appendChild(badge); } badge.textContent = n; }
   else if (badge) { badge.remove(); }
@@ -876,16 +884,25 @@ function renderCleaning() {
     return hits.length ? '<div class="products-grid" style="margin-top:14px">' + hits.map(cleaningCard).join("") + "</div>" : noResult();
   }
   var exIds = expiringProductIds();
+  var lowIds = lowStockIds();
   if (f === "expiring") {
     var exItems = products.filter(function (p) { return exIds.indexOf(p.id) >= 0; });
     return slimHead(currentLang === "zh" ? "⚠️ 即將到期 / 已過期（1 個月內）" : "⚠️ Expiring (≤30d)", exItems.length, "repair") +
       '<div class="products-grid">' + exItems.map(cleaningCard).join("") + "</div>";
+  }
+  if (f === "low") {
+    var lowItems = products.filter(function (p) { return lowIds.indexOf(p.id) >= 0; });
+    return slimHead(currentLang === "zh" ? "🛒 低於最低庫存，需補貨" : "🛒 Below reorder level", lowItems.length, "scrap") +
+      '<div class="products-grid">' + lowItems.map(cleaningCard).join("") + "</div>";
   }
   var actN = products.filter(function (p) { return p.status !== "停用"; }).length;
   var offN = products.length - actN;
   var cap = '<div class="mod-caption">' + (currentLang === "zh"
     ? "清潔劑 共 <b>" + products.length + "</b> 款　·　啟用 <b>" + actN + "</b>　·　<span class=\"off\">停用 " + offN + "</span>"
     : "<b>" + products.length + "</b> chemicals · <b>" + actN + "</b> active · <span class=\"off\">" + offN + " off</span>") + "</div>";
+  if (lowIds.length) cap += '<div class="alert-expiry" style="background:var(--danger-bg);border-color:#f0b3ad;color:#a8362c" onclick="setFilter(\'low\')"><span class="ic">🛒</span><span>' +
+    (currentLang === "zh" ? "有 <b>" + lowIds.length + "</b> 款清潔劑低於最低庫存，需補貨" : "<b>" + lowIds.length + "</b> chemicals below reorder level") +
+    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
   if (exIds.length) cap += '<div class="alert-expiry" onclick="setFilter(\'expiring\')"><span class="ic">⚠️</span><span>' +
     (currentLang === "zh" ? "有 <b>" + exIds.length + "</b> 款清潔劑即將到期或已過期（1 個月內）" : "<b>" + exIds.length + "</b> chemicals expiring or expired (≤30d)") +
     '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
@@ -910,7 +927,10 @@ function renderCleaning() {
 
 function cleaningCard(p) {
   var s = Number(p.stock);
-  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var minS = Number(p.min_stock) || 0;
+  var below = minS > 0 && s < minS;
+  var stockClass = below ? "stock-out" : s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var stockLbl = below ? (currentLang === "zh" ? "需補貨" : "Restock") : (currentLang === "zh" ? "庫存" : "Stock");
   var disabled = p.status === "停用";
   var rinseYes = p.rinse_zh === "需要";
   var img = p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">' : '<span class="no-img">🧴</span>';
@@ -934,7 +954,7 @@ function cleaningCard(p) {
       '<div class="product-name-sub" data-zh="' + esc(p.subname_zh) + '" data-en="' + esc(p.subname_en) + '">' + esc(p.subname_zh) + "</div>" +
     "</div>" +
     '<div class="stock-area"><div class="stock-badge ' + stockClass + '" id="stock-' + p.id + '">' + s + "</div>" +
-    '<div class="stock-label" data-zh="庫存" data-en="Stock">庫存</div></div></div>' +
+    '<div class="stock-label"' + (below ? ' style="color:var(--danger);font-weight:800"' : "") + ">" + esc(stockLbl) + "</div></div></div>" +
     '<table class="detail-table">' +
       '<tr><td class="dt-label" data-zh="適用範圍" data-en="Applicable">適用範圍</td><td class="dt-value" data-zh="' + esc(p.applicable_zh) + '" data-en="' + esc(p.applicable_en) + '">' + esc(p.applicable_zh) + "</td></tr>" +
       '<tr><td class="dt-label" data-zh="兌水比例" data-en="Dilution">兌水比例</td><td class="dt-value" data-zh="' + esc(p.dilution_zh) + '" data-en="' + esc(p.dilution_en) + '">' + esc(p.dilution_zh) + "</td></tr>" +
@@ -958,6 +978,10 @@ function expiringProductIds() {
     if (d !== null && d <= 30) ids[b.product_id] = 1;
   });
   return Object.keys(ids).map(Number);
+}
+// products at/below their reorder level (min_stock>0 and stock < min_stock)
+function lowStockIds() {
+  return products.filter(function (p) { var m = Number(p.min_stock) || 0; return m > 0 && Number(p.stock) < m; }).map(function (p) { return p.id; });
 }
 function batchListHtml(p) {
   var list = batchesOf(p.id);
@@ -1042,6 +1066,7 @@ function setProductForm(p) {
   document.getElementById("pfDilEn").value = p.dilution_en || "";
   document.getElementById("pfRinse").value = p.rinse_zh === "需要" ? "yes" : "no";
   document.getElementById("pfStock").value = p.stock != null ? p.stock : 0;
+  document.getElementById("pfMin").value = p.min_stock != null ? p.min_stock : 0;
   formImages.pf = p.image || null;
   document.getElementById("pfImgPreview").innerHTML = formImages.pf ? '<img src="' + esc(formImages.pf) + '">' : '<span class="no-img">🧴</span>';
 }
@@ -1068,6 +1093,7 @@ async function saveProductForm() {
     image: formImages.pf,
     alt: nameZh,
     stock: document.getElementById("pfStock").value,
+    min_stock: document.getElementById("pfMin").value,
     status: "啟用",
     sort_order: editProductId || 999,
   };
