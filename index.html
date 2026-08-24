@@ -627,8 +627,8 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 <!-- Tool category manager -->
 <div class="modal-overlay" id="catModal">
   <div class="modal-box form-modal">
-    <h3 data-zh="管理工具分類" data-en="Manage categories">管理工具分類</h3>
-    <div class="modal-sub" data-zh="可改名、用 ↑↓ 調整順序、刪除或新增（『其他』不可改名或刪除）" data-en="Rename, reorder with ↑↓, add or remove ('其他' is fixed)">可改名、用 ↑↓ 調整順序、刪除或新增</div>
+    <h3 id="catTitle" data-zh="管理分類" data-en="Manage categories">管理分類</h3>
+    <div class="modal-sub" data-zh="可改名、用 ↑↓ 調整順序、刪除或新增" data-en="Rename, reorder with ↑↓, add or remove">可改名、用 ↑↓ 調整順序、刪除或新增</div>
     <div id="catList"></div>
     <button type="button" class="btn-remove-img" style="border-color:var(--accent);color:var(--accent)" onclick="catMgrAdd()" data-zh="＋ 新增分類" data-en="+ Add category">＋ 新增分類</button>
     <div class="modal-btns">
@@ -848,6 +848,7 @@ function buildFilterChips() {
     var exn = expiringProductIds().length;
     if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
     h += chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
+    if (isAdmin) h += '<button class="chip" onclick="openCatManager(\'cleaning\')">⚙ ' + (currentLang === "zh" ? "管理分類" : "Categories") + "</button>";
   } else if (m === "vacuum") {
     var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
@@ -1707,12 +1708,20 @@ async function deleteTool(id) {
   if (!res.error) { tools = tools.filter(function (x) { return x.id !== id; }); render(); } else adminErr(res.error);
 }
 
-// ---- tool category manager (rename / reorder / add / delete) ----
-var catMgr = [];
-function openCatManager() {
-  catMgr = toolCategories.length
-    ? toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; })
-    : ["垃圾桶", "防滑牌", "洗手液器", "其他"].map(function (n) { return { name: n }; });
+// ---- category manager (tool + cleaning: rename / reorder / add / delete) ----
+var catMgr = [], catMgrMode = "tool";
+function openCatManager(mode) {
+  catMgrMode = mode || "tool";
+  var title = document.getElementById("catTitle");
+  if (catMgrMode === "cleaning") {
+    catMgr = categories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name_zh, name_en: c.name_en, icon: c.icon }; });
+    title.setAttribute("data-zh", "管理清潔劑分類"); title.setAttribute("data-en", "Chemical categories");
+  } else {
+    catMgr = toolCategories.length
+      ? toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; })
+      : ["垃圾桶", "防滑牌", "洗手液器", "其他"].map(function (n) { return { name: n }; });
+    title.setAttribute("data-zh", "管理工具分類"); title.setAttribute("data-en", "Tool categories");
+  }
   document.getElementById("catError").style.display = "none";
   renderCatMgr();
   document.getElementById("catModal").classList.add("show");
@@ -1720,33 +1729,49 @@ function openCatManager() {
 }
 function closeCatManager() { document.getElementById("catModal").classList.remove("show"); }
 function renderCatMgr() {
+  var cleaning = catMgrMode === "cleaning";
   document.getElementById("catList").innerHTML = catMgr.map(function (a, i) {
-    var isOther = a.name === "其他";
+    var fixed = !cleaning && a.name === "其他";
     return '<div class="acc-row">' +
-      '<input class="acc-name" value="' + esc(a.name || "") + '" oninput="catMgr[' + i + '].name=this.value"' + (isOther ? " disabled" : "") + ' data-zh-placeholder="分類名稱" data-en-placeholder="Name" placeholder="分類名稱">' +
+      (cleaning ? '<input class="acc-name" style="flex:0 0 44px;text-align:center" value="' + esc(a.icon || "") + '" oninput="catMgr[' + i + '].icon=this.value" placeholder="🧹">' : "") +
+      '<input class="acc-name" value="' + esc(a.name || "") + '" oninput="catMgr[' + i + '].name=this.value"' + (fixed ? " disabled" : "") + ' data-zh-placeholder="分類名稱" data-en-placeholder="Name" placeholder="分類名稱">' +
       '<button type="button" class="acc-del" onclick="catMgrMove(' + i + ',-1)"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
       '<button type="button" class="acc-del" onclick="catMgrMove(' + i + ',1)"' + (i === catMgr.length - 1 ? " disabled" : "") + ">↓</button>" +
-      (isOther ? "" : '<button type="button" class="acc-del" onclick="catMgrDel(' + i + ')">✕</button>') +
+      (fixed ? "" : '<button type="button" class="acc-del" onclick="catMgrDel(' + i + ')">✕</button>') +
       "</div>";
   }).join("");
 }
-function catMgrAdd() { catMgr.push({ name: "" }); renderCatMgr(); }
+function catMgrAdd() { catMgr.push({ name: "", icon: "" }); renderCatMgr(); }
 function catMgrDel(i) { catMgr.splice(i, 1); renderCatMgr(); }
 function catMgrMove(i, d) { var j = i + d; if (j < 0 || j >= catMgr.length) return; var t = catMgr[i]; catMgr[i] = catMgr[j]; catMgr[j] = t; renderCatMgr(); }
 async function saveCatManager() {
   var btn = document.getElementById("catSaveBtn"), errEl = document.getElementById("catError");
   errEl.style.display = "none";
-  var cats = catMgr.map(function (a) { return { id: a.id, name: (a.name || "").trim() }; }).filter(function (a) { return a.name; });
-  if (!cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
-  var names = cats.map(function (a) { return a.name; });
-  if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; return; }
+  var res, names;
   btn.textContent = "..."; btn.disabled = true;
-  var res = await sb.rpc("save_tool_categories", { p_password: currentPwd, p_cats: cats });
+  if (catMgrMode === "cleaning") {
+    var ccats = catMgr.map(function (a) { return { id: a.id, name_zh: (a.name || "").trim(), name_en: a.name_en || (a.name || "").trim(), icon: (a.icon || "").trim() }; }).filter(function (a) { return a.name_zh; });
+    if (!ccats.length) { errEl.textContent = currentLang === "zh" ? "至少要一個分類" : "Need one"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
+    names = ccats.map(function (a) { return a.name_zh; });
+    if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
+    res = await sb.rpc("save_categories", { p_password: currentPwd, p_cats: ccats });
+  } else {
+    var cats = catMgr.map(function (a) { return { id: a.id, name: (a.name || "").trim() }; }).filter(function (a) { return a.name; });
+    if (!cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
+    names = cats.map(function (a) { return a.name; });
+    if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
+    res = await sb.rpc("save_tool_categories", { p_password: currentPwd, p_cats: cats });
+  }
   btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
   if (!res.error) {
     closeCatManager();
-    var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
-    var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
+    if (catMgrMode === "cleaning") {
+      var cc = await sb.from("categories").select("*").order("sort_order"); if (!cc.error) categories = cc.data || [];
+      var pr = await sb.from("products").select("*").order("sort_order"); if (!pr.error) products = pr.data || [];
+    } else {
+      var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
+      var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
+    }
     render();
   } else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
 }
