@@ -624,6 +624,21 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
   </div>
 </div>
 
+<!-- Tool category manager -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal-box form-modal">
+    <h3 data-zh="管理工具分類" data-en="Manage categories">管理工具分類</h3>
+    <div class="modal-sub" data-zh="可改名、用 ↑↓ 調整順序、刪除或新增（『其他』不可改名或刪除）" data-en="Rename, reorder with ↑↓, add or remove ('其他' is fixed)">可改名、用 ↑↓ 調整順序、刪除或新增</div>
+    <div id="catList"></div>
+    <button type="button" class="btn-remove-img" style="border-color:var(--accent);color:var(--accent)" onclick="catMgrAdd()" data-zh="＋ 新增分類" data-en="+ Add category">＋ 新增分類</button>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCatManager()" data-zh="取消" data-en="Cancel">取消</button>
+      <button class="btn-login" id="catSaveBtn" onclick="saveCatManager()" data-zh="儲存" data-en="Save">儲存</button>
+    </div>
+    <div class="modal-error" id="catError">Error</div>
+  </div>
+</div>
+
 <!-- Lightbox for large photo view -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()"><span class="lb-close">✕</span><img id="lbImg" alt=""></div>
 
@@ -648,6 +663,7 @@ var products = [];
 var vacuums = [];
 var vacMaint = [];
 var tools = [];
+var toolCategories = [];  // {id, name, sort_order} — managed list
 var equipment = [];
 var equipMaint = [];
 var batches = [];        // product_batches
@@ -692,6 +708,8 @@ async function loadAll() {
   vacMaint = m.error ? [] : (m.data || []);
   var t = await sb.from("tools").select("*").order("sort_order");
   tools = t.error ? [] : (t.data || []);
+  var tc = await sb.from("tool_categories").select("*").order("sort_order");
+  toolCategories = tc.error ? [] : (tc.data || []);
   var e = await sb.from("equipment").select("*").order("type").order("model");
   equipment = e.error ? [] : (e.data || []);
   var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
@@ -809,6 +827,12 @@ function chipHtml(key, label, count, cls) {
     esc(label) + (count != null ? ' <span class="c-n">' + count + "</span>" : "") + "</button>";
 }
 function floorKey(fc) { return fc && fc.trim() ? fc.trim() : (currentLang === "zh" ? "未指定" : "None"); }
+function toolCatNames() {
+  if (toolCategories.length) return toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; });
+  return ["垃圾桶", "防滑牌", "洗手液器", "其他"];
+}
+function toolCatRank(name) { var i = toolCatNames().indexOf(name); return i < 0 ? 998 : i; }
+function toolCatCmp(a, b) { return (toolCatRank(a) - toolCatRank(b)) || natCmp(a, b); }
 function buildFilterChips() {
   var m = currentModule, h = "";
   if (m === "cleaning") {
@@ -853,13 +877,12 @@ function buildFilterChips() {
     var ta = tools.filter(function (t) { return t.status !== "停用"; });
     var tdd = tools.length - ta.length;
     h += chipHtml("all", currentLang === "zh" ? "全部" : "All", ta.length);
-    var torder = ["垃圾桶", "防滑牌", "洗手液", "其他"];
     var tcat = {}; ta.forEach(function (t) { var c = t.category || "其他"; tcat[c] = (tcat[c] || 0) + 1; });
-    Object.keys(tcat).sort(function (a, b) { var ia = torder.indexOf(a), ib = torder.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || natCmp(a, b); })
-      .forEach(function (c) { h += chipHtml("cat-" + c, c, tcat[c]); });
+    Object.keys(tcat).sort(toolCatCmp).forEach(function (c) { h += chipHtml("cat-" + c, c, tcat[c]); });
     if (tdd) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", tdd, "danger");
     var tlow = lowToolIds().length;
     if (tlow) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", tlow, "danger");
+    if (isAdmin) h += '<button class="chip" onclick="openCatManager()">⚙ ' + (currentLang === "zh" ? "管理分類" : "Categories") + "</button>";
   }
   document.getElementById("filterBar").innerHTML = h;
 }
@@ -1566,10 +1589,9 @@ function renderTool() {
     var cat = f.slice(4);
     return cap + toolGrid(tools.filter(function (t) { return t.status !== "停用" && (t.category || "其他") === cat; }));
   }
-  var order = ["垃圾桶", "防滑牌", "洗手液", "其他"];
   var groups = {};
   tools.filter(function (t) { return t.status !== "停用"; }).forEach(function (t) { var c = t.category || "其他"; (groups[c] = groups[c] || []).push(t); });
-  var keys = Object.keys(groups).sort(function (a, b) { var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || natCmp(a, b); });
+  var keys = Object.keys(groups).sort(toolCatCmp);
   var body = "";
   keys.forEach(function (c) { body += slimHead("🧹 " + esc(c), groups[c].length) + toolGrid(groups[c]); });
   return cap + (body || emptyState("🧹", "尚無啟用工具", "No active tools"));
@@ -1638,7 +1660,12 @@ function openToolForm(id) {
   title.setAttribute("data-zh", editToolId == null ? "新增工具" : "編輯工具");
   title.setAttribute("data-en", editToolId == null ? "Add tool" : "Edit tool");
   document.getElementById("tfName").value = t.name || "";
-  document.getElementById("tfCategory").value = t.category || "其他";
+  var catSel = document.getElementById("tfCategory");
+  var cur = t.category || "其他";
+  var names = toolCatNames();
+  if (names.indexOf(cur) < 0) names = names.concat([cur]);
+  catSel.innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + "</option>"; }).join("");
+  catSel.value = cur;
   document.getElementById("tfStock").value = t.stock != null ? t.stock : 0;
   document.getElementById("tfInUse").value = t.in_use != null ? t.in_use : 0;
   document.getElementById("tfMin").value = t.min_stock != null ? t.min_stock : 0;
@@ -1678,6 +1705,50 @@ async function deleteTool(id) {
   if (!confirm((currentLang === "zh" ? "確定刪除工具「" : 'Delete tool "') + (t ? t.name : id) + (currentLang === "zh" ? "」？" : '"?'))) return;
   var res = await sb.rpc("delete_tool", { p_password: currentPwd, p_id: id });
   if (!res.error) { tools = tools.filter(function (x) { return x.id !== id; }); render(); } else adminErr(res.error);
+}
+
+// ---- tool category manager (rename / reorder / add / delete) ----
+var catMgr = [];
+function openCatManager() {
+  catMgr = toolCategories.length
+    ? toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; })
+    : ["垃圾桶", "防滑牌", "洗手液器", "其他"].map(function (n) { return { name: n }; });
+  document.getElementById("catError").style.display = "none";
+  renderCatMgr();
+  document.getElementById("catModal").classList.add("show");
+  applyLang();
+}
+function closeCatManager() { document.getElementById("catModal").classList.remove("show"); }
+function renderCatMgr() {
+  document.getElementById("catList").innerHTML = catMgr.map(function (a, i) {
+    var isOther = a.name === "其他";
+    return '<div class="acc-row">' +
+      '<input class="acc-name" value="' + esc(a.name || "") + '" oninput="catMgr[' + i + '].name=this.value"' + (isOther ? " disabled" : "") + ' data-zh-placeholder="分類名稱" data-en-placeholder="Name" placeholder="分類名稱">' +
+      '<button type="button" class="acc-del" onclick="catMgrMove(' + i + ',-1)"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
+      '<button type="button" class="acc-del" onclick="catMgrMove(' + i + ',1)"' + (i === catMgr.length - 1 ? " disabled" : "") + ">↓</button>" +
+      (isOther ? "" : '<button type="button" class="acc-del" onclick="catMgrDel(' + i + ')">✕</button>') +
+      "</div>";
+  }).join("");
+}
+function catMgrAdd() { catMgr.push({ name: "" }); renderCatMgr(); }
+function catMgrDel(i) { catMgr.splice(i, 1); renderCatMgr(); }
+function catMgrMove(i, d) { var j = i + d; if (j < 0 || j >= catMgr.length) return; var t = catMgr[i]; catMgr[i] = catMgr[j]; catMgr[j] = t; renderCatMgr(); }
+async function saveCatManager() {
+  var btn = document.getElementById("catSaveBtn"), errEl = document.getElementById("catError");
+  errEl.style.display = "none";
+  var cats = catMgr.map(function (a) { return { id: a.id, name: (a.name || "").trim() }; }).filter(function (a) { return a.name; });
+  if (!cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
+  var names = cats.map(function (a) { return a.name; });
+  if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; return; }
+  btn.textContent = "..."; btn.disabled = true;
+  var res = await sb.rpc("save_tool_categories", { p_password: currentPwd, p_cats: cats });
+  btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
+  if (!res.error) {
+    closeCatManager();
+    var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
+    var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
+    render();
+  } else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
 }
 
 // ============================================================================
