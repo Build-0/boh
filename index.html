@@ -757,7 +757,7 @@ function toggleSearch() {
   if (searchOpen) { var si = document.getElementById("searchInput"); si.value = ""; searchQuery = ""; setTimeout(function () { si.focus(); }, 40); }
   else { searchQuery = ""; document.getElementById("searchInput").value = ""; render(); }
 }
-function onSearch(q) { searchQuery = (q || "").trim().toLowerCase(); render(); }
+function onSearch(q) { if (!searchOpen) return; searchQuery = (q || "").trim().toLowerCase(); render(); }
 function matchQuery(fields) {
   if (!searchQuery) return true;
   return fields.some(function (f) { return f && String(f).toLowerCase().indexOf(searchQuery) >= 0; });
@@ -844,7 +844,9 @@ function render() {
 }
 function setModule(m) {
   currentModule = m;
-  if (searchOpen) toggleSearch();
+  searchQuery = "";
+  var si = document.getElementById("searchInput"); if (si) si.value = "";
+  if (searchOpen) { searchOpen = false; document.getElementById("searchRow").classList.remove("show"); document.getElementById("filterBar").style.display = "flex"; }
   render();
 }
 function updateExpiryTabBadge() {
