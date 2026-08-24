@@ -816,12 +816,14 @@ function buildFilterChips() {
     var dis = products.length - act.length;
     h += chipHtml("all", currentLang === "zh" ? "全部" : "All", act.length);
     categories.forEach(function (c) { var n = act.filter(function (p) { return p.category_id === c.id; }).length; if (n) h += chipHtml("cat-" + c.id, (currentLang === "zh" ? c.name_zh : c.name_en) || c.name_zh, n); });
+    // special filters on their own row
+    h += '<span class="chip-break"></span>';
     if (dis) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", dis, "danger");
     var lown = lowStockIds().length;
     if (lown) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", lown, "danger");
     var exn = expiringProductIds().length;
     if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
-    h += '<span class="chip-break"></span>' + chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
+    h += chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
   } else if (m === "vacuum") {
     var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
