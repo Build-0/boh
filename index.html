@@ -95,6 +95,9 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .stock-label { font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
 .min-label { font-size:10px; color:var(--ink-3); margin-top:2px; font-weight:700; background:var(--surface-2); border-radius:6px; padding:1px 6px; display:inline-block; }
 .min-label.below { color:var(--danger); background:var(--danger-bg); }
+.tool-meta { display:flex; gap:7px; font-size:11.5px; color:var(--ink-2); font-weight:700; margin:8px 0 2px; flex-wrap:wrap; }
+.tool-meta span { background:var(--surface-2); padding:2px 9px; border-radius:6px; }
+.tool-meta span.low { background:var(--danger-bg); color:var(--danger); }
 .stock-loading { background:var(--surface-3); color:var(--ink-3); }
 .stock-ok { background:var(--ok-bg); color:var(--ok); }
 .stock-low { background:var(--warn-bg); color:var(--warn); }
@@ -162,14 +165,14 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
 /* ---------- Vacuum / Equipment cards ---------- */
 .vac-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
-.vac-card { background:var(--surface); border-radius:var(--r); border:1px solid var(--line); overflow:hidden; box-shadow:var(--sh); transition:.22s; }
+.vac-card { background:var(--surface); border-radius:var(--r); border:1px solid var(--line); overflow:hidden; box-shadow:var(--sh); transition:.22s; display:flex; }
 .vac-card:hover { transform:translateY(-3px); box-shadow:var(--sh-hi); border-color:#d8e0e7; }
 .vac-card.scrap { opacity:.6; }
-.vac-top { display:flex; gap:12px; padding:14px 15px 12px; }
-.vac-img { width:82px; height:82px; flex-shrink:0; border-radius:12px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--line-2); cursor:zoom-in; }
-.vac-img img { max-width:100%; max-height:100%; object-fit:contain; }
-.vac-img .no-img { font-size:30px; }
-.vac-head { flex:1; min-width:0; }
+.vac-img { width:104px; min-height:120px; flex:0 0 auto; align-self:stretch; background:var(--surface-2); border-right:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; overflow:hidden; padding:8px; cursor:zoom-in; }
+.vac-img img { max-width:100%; max-height:104px; object-fit:contain; border-radius:6px; }
+.vac-img .no-img { font-size:32px; }
+.vac-body { flex:1; min-width:0; display:flex; flex-direction:column; }
+.vac-head { padding:13px 15px 4px; }
 .vac-model { font-size:16px; font-weight:800; color:var(--ink); line-height:1.25; word-break:break-word; }
 .vac-brand { font-size:12.5px; color:var(--ink-3); margin-top:2px; font-weight:500; }
 .vac-badges { margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
@@ -237,7 +240,7 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .module-bar { position:relative; background:transparent; backdrop-filter:none; border-bottom:1px solid var(--line-2); box-shadow:none; padding:9px 54px 9px 12px; justify-content:center; }
 .icon-btn { position:absolute; right:12px; top:50%; transform:translateY(-50%); width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ink-2); transition:.15s; }
 .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
-.filter-bar { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; }
+.filter-bar { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; padding:8px 12px; }
 .chip-break { flex-basis:100%; height:0; margin:0; }
 .module-btn .mi { font-size:30px; line-height:1; }
 .module-btn { padding-top:7px; padding-bottom:7px; }
@@ -250,6 +253,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .alert-expiry:hover { background:#fbe3c4; }
 .alert-expiry .ic { font-size:18px; } .alert-expiry .go { margin-left:auto; font-size:12px; opacity:.85; }
 .tab-alert { background:var(--danger); color:#fff; font-size:10px; font-weight:800; border-radius:var(--pill); padding:0 5px; margin-left:3px; min-width:16px; height:16px; line-height:16px; text-align:center; display:inline-block; }
+.acc-box { margin:0 15px 8px; padding:8px 10px; border-radius:9px; background:var(--surface-2); border:1px solid var(--line-2); }
+.acc-box.bad { background:var(--danger-bg); border-color:#f0b3ad; }
+.acc-h { font-size:11.5px; font-weight:800; color:var(--ink-2); margin-bottom:5px; }
+.acc-box.bad .acc-h { color:var(--danger); }
+.acc-item { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; margin:2px 4px 0 0; }
+.acc-item.y { background:var(--ok-bg); color:var(--ok); }
+.acc-item.n { background:#fff; color:var(--danger); border:1px solid #f0b3ad; }
+.acc-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.acc-row input[type=checkbox] { width:20px; height:20px; flex:0 0 auto; margin:0; accent-color:var(--ok); }
+.acc-row .acc-name { flex:1; margin:0; }
+.acc-del { flex:0 0 auto; width:34px; height:38px; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; color:var(--ink-3); cursor:pointer; font-size:14px; }
+.acc-del:hover { border-color:var(--danger); color:var(--danger); }
 .chip { flex:0 0 auto; padding:7px 14px; border-radius:var(--pill); font-size:14px; font-weight:700; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2); white-space:nowrap; cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
 .chip:hover { border-color:var(--accent); color:var(--accent); }
 .chip.on { background:linear-gradient(135deg,var(--brand-2),var(--brand-3)); color:#fff; border-color:transparent; }
@@ -458,8 +473,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
     <h3 id="tmTitle" data-zh="新增工具" data-en="Add tool">新增工具</h3>
     <div class="modal-sub" data-zh="填寫工具資料" data-en="Fill in tool details">填寫工具資料</div>
 
-    <label data-zh="名稱" data-en="Name">名稱</label>
-    <input id="tfName">
+    <div class="row2">
+      <div><label data-zh="名稱" data-en="Name">名稱</label><input id="tfName"></div>
+      <div>
+        <label data-zh="物品分類" data-en="Category">物品分類</label>
+        <select id="tfCategory">
+          <option value="垃圾桶" data-zh="垃圾桶" data-en="Trash bin">垃圾桶</option>
+          <option value="防滑牌" data-zh="防滑牌" data-en="Wet-floor sign">防滑牌</option>
+          <option value="洗手液" data-zh="洗手液" data-en="Hand soap">洗手液</option>
+          <option value="其他" data-zh="其他" data-en="Other" selected>其他</option>
+        </select>
+      </div>
+    </div>
 
     <label data-zh="圖片" data-en="Image">圖片</label>
     <div class="img-preview" id="tfImgPreview"><span class="no-img">🧹</span></div>
@@ -467,7 +492,11 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
     <button type="button" class="btn-remove-img" onclick="clearFormImage('tf')" data-zh="移除相片" data-en="Remove photo">移除相片</button>
 
     <div class="row2">
-      <div><label data-zh="數量" data-en="Stock">數量</label><input type="number" id="tfStock" min="0" value="0"></div>
+      <div><label data-zh="庫存量" data-en="In stock">庫存量</label><input type="number" id="tfStock" min="0" value="0"></div>
+      <div><label data-zh="正在使用中" data-en="In use">正在使用中</label><input type="number" id="tfInUse" min="0" value="0"></div>
+    </div>
+    <div class="row2">
+      <div><label data-zh="最低庫存（0=不提醒）" data-en="Min stock (0=off)">最低庫存（0=不提醒）</label><input type="number" id="tfMin" min="0" value="0"></div>
       <div><label data-zh="備註" data-en="Notes">備註</label><input id="tfNotes"></div>
     </div>
 
@@ -517,6 +546,13 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 
     <label data-zh="備註" data-en="Notes">備註</label>
     <textarea id="efNotes"></textarea>
+
+    <label style="display:flex;justify-content:space-between;align-items:center">
+      <span data-zh="配件清單（勾選=齊全）" data-en="Accessories (checked = present)">配件清單（勾選=齊全）</span>
+      <button type="button" class="mini-btn" onclick="presetFridgeAccessories()" data-zh="帶入冰箱5項" data-en="Fridge 5">帶入冰箱5項</button>
+    </label>
+    <div id="efAccList"></div>
+    <button type="button" class="btn-remove-img" style="border-color:var(--accent);color:var(--accent)" onclick="addEfAccessory()" data-zh="＋ 新增配件" data-en="+ Add part">＋ 新增配件</button>
 
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeEquipForm()" data-zh="取消" data-en="Cancel">取消</button>
@@ -815,7 +851,13 @@ function buildFilterChips() {
     var ta = tools.filter(function (t) { return t.status !== "停用"; });
     var tdd = tools.length - ta.length;
     h += chipHtml("all", currentLang === "zh" ? "全部" : "All", ta.length);
+    var torder = ["垃圾桶", "防滑牌", "洗手液", "其他"];
+    var tcat = {}; ta.forEach(function (t) { var c = t.category || "其他"; tcat[c] = (tcat[c] || 0) + 1; });
+    Object.keys(tcat).sort(function (a, b) { var ia = torder.indexOf(a), ib = torder.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || natCmp(a, b); })
+      .forEach(function (c) { h += chipHtml("cat-" + c, c, tcat[c]); });
     if (tdd) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", tdd, "danger");
+    var tlow = lowToolIds().length;
+    if (tlow) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", tlow, "danger");
   }
   document.getElementById("filterBar").innerHTML = h;
 }
@@ -849,14 +891,17 @@ function setModule(m) {
   if (searchOpen) { searchOpen = false; document.getElementById("searchRow").classList.remove("show"); document.getElementById("filterBar").style.display = "flex"; }
   render();
 }
-function updateExpiryTabBadge() {
-  var btn = document.querySelector('.module-btn[data-m="cleaning"]');
+function setTabBadge(module, n) {
+  var btn = document.querySelector('.module-btn[data-m="' + module + '"]');
   if (!btn) return;
-  var u = {}; expiringProductIds().forEach(function (i) { u[i] = 1; }); lowStockIds().forEach(function (i) { u[i] = 1; });
-  var n = Object.keys(u).length;
   var badge = btn.querySelector(".tab-alert");
   if (n) { if (!badge) { badge = document.createElement("span"); badge.className = "tab-alert"; btn.appendChild(badge); } badge.textContent = n; }
   else if (badge) { badge.remove(); }
+}
+function updateExpiryTabBadge() {
+  var u = {}; expiringProductIds().forEach(function (i) { u[i] = 1; }); lowStockIds().forEach(function (i) { u[i] = 1; });
+  setTabBadge("cleaning", Object.keys(u).length);
+  setTabBadge("tool", lowToolIds().length);
 }
 
 function applyLang() {
@@ -1363,21 +1408,21 @@ function vacCard(v) {
       '<button class="mini-btn grey" onclick="deleteVacuum(' + v.id + ')" data-zh="刪除" data-en="Delete">刪除</button>' +
     "</div>"
   ) : "";
+  var sub = [v.label ? v.model : v.brand, v.serial ? "S/N " + v.serial : ""].filter(Boolean).join(" · ");
   return '<div class="vac-card ' + brandClass(v.brand) + " " + (st === "報廢" ? "scrap" : "") + '">' +
-    '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
-    '<div class="vac-head"><div class="vac-model">' + esc(v.label || v.model) + "</div>" +
-    (function () {
-      var sub = [v.label ? v.model : v.brand, v.serial ? "S/N " + v.serial : ""].filter(Boolean).join(" · ");
-      return sub ? '<div class="vac-brand">' + esc(sub) + "</div>" : "";
-    })() +
-    '<div class="vac-badges">' +
-      brandTag(v.brand) +
-      (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
-      '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
-    "</div></div></div>" +
-    (v.notes ? '<div class="vac-notes">' + esc(v.notes) + "</div>" : "") +
-    '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
-    admin + "</div>";
+    '<div class="vac-img">' + img + "</div>" +
+    '<div class="vac-body">' +
+      '<div class="vac-head"><div class="vac-model">' + esc(v.label || v.model) + "</div>" +
+        (sub ? '<div class="vac-brand">' + esc(sub) + "</div>" : "") +
+        '<div class="vac-badges">' +
+          brandTag(v.brand) +
+          (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
+          '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
+        "</div></div>" +
+      (v.notes ? '<div class="vac-notes">' + esc(v.notes) + "</div>" : "") +
+      '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+      admin +
+    "</div></div>";
 }
 async function toggleVacuumStatus(id) {
   var v = vacuums.find(function (x) { return x.id === id; });
@@ -1486,25 +1531,56 @@ async function deleteMaint(kind, id) {
 // ============================================================================
 //  Module 3 — Tools (inventory)
 // ============================================================================
+function lowToolIds() {
+  return tools.filter(function (t) { var m = Number(t.min_stock) || 0; return t.status !== "停用" && m > 0 && Number(t.stock) < m; }).map(function (t) { return t.id; });
+}
+function toolGrid(arr) { return '<div class="products-grid">' + arr.map(toolCard).join("") + "</div>"; }
 function renderTool() {
   if (!tools.length) return emptyState("🧹", "尚無清潔工具，登入後可新增", "No tools yet");
   var f = moduleFilter.tool;
   if (searchQuery) {
-    var hits = tools.filter(function (t) { return matchQuery([t.name, t.notes]); });
-    return hits.length ? '<div class="products-grid" style="margin-top:14px">' + hits.map(toolCard).join("") + "</div>" : noResult();
+    var hits = tools.filter(function (t) { return matchQuery([t.name, t.notes, t.category]); });
+    return hits.length ? '<div style="margin-top:14px">' + toolGrid(hits) + "</div>" : noResult();
   }
+  var lowIds = lowToolIds();
+  var actN = tools.filter(function (t) { return t.status !== "停用"; }).length;
+  var offN = tools.length - actN;
+  var cap = '<div class="mod-caption">' + (currentLang === "zh"
+    ? "清潔工具 共 <b>" + tools.length + "</b> 款　·　啟用 <b>" + actN + "</b>　·　<span class=\"off\">停用 " + offN + "</span>"
+    : "<b>" + tools.length + "</b> tools · <b>" + actN + "</b> active · <span class=\"off\">" + offN + " off</span>") + "</div>";
+  if (lowIds.length) cap += '<div class="alert-expiry" style="background:var(--danger-bg);border-color:#f0b3ad;color:#a8362c" onclick="setFilter(\'low\')"><span class="ic">🛒</span><span>' +
+    (currentLang === "zh" ? "有 <b>" + lowIds.length + "</b> 樣工具低於最低庫存，需補貨" : "<b>" + lowIds.length + "</b> tools below reorder level") +
+    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
+
   if (f === "disabled") {
     var dis = tools.filter(function (t) { return t.status === "停用"; });
-    return dis.length ? '<div class="products-grid" style="margin-top:14px">' + dis.map(toolCard).join("") + "</div>" : emptyState("🚫", "沒有停用工具", "No disabled tools");
+    return cap + (dis.length ? toolGrid(dis) : emptyState("🚫", "沒有停用工具", "No disabled tools"));
   }
-  var active = tools.filter(function (t) { return t.status !== "停用"; });
-  return active.length ? '<div class="products-grid" style="margin-top:14px">' + active.map(toolCard).join("") + "</div>" : emptyState("🧹", "尚無啟用工具", "No active tools");
+  if (f === "low") {
+    var lowItems = tools.filter(function (t) { return lowIds.indexOf(t.id) >= 0; });
+    return slimHead(currentLang === "zh" ? "🛒 低於最低庫存，需補貨" : "🛒 Below reorder", lowItems.length, "scrap") + toolGrid(lowItems);
+  }
+  if (f.indexOf("cat-") === 0) {
+    var cat = f.slice(4);
+    return cap + toolGrid(tools.filter(function (t) { return t.status !== "停用" && (t.category || "其他") === cat; }));
+  }
+  var order = ["垃圾桶", "防滑牌", "洗手液", "其他"];
+  var groups = {};
+  tools.filter(function (t) { return t.status !== "停用"; }).forEach(function (t) { var c = t.category || "其他"; (groups[c] = groups[c] || []).push(t); });
+  var keys = Object.keys(groups).sort(function (a, b) { var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || natCmp(a, b); });
+  var body = "";
+  keys.forEach(function (c) { body += slimHead("🧹 " + esc(c), groups[c].length) + toolGrid(groups[c]); });
+  return cap + (body || emptyState("🧹", "尚無啟用工具", "No active tools"));
 }
 function toolCard(t) {
-  var s = Number(t.stock);
-  var stockClass = s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
+  var s = Number(t.stock), inUse = Number(t.in_use) || 0, total = s + inUse;
+  var minS = Number(t.min_stock) || 0, below = minS > 0 && s < minS;
+  var stockClass = below ? "stock-out" : s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
   var disabled = t.status === "停用";
   var img = t.image ? '<img src="' + esc(t.image) + '" loading="lazy">' : '<span class="no-img">🧹</span>';
+  var meta = '<div class="tool-meta"><span>' + (currentLang === "zh" ? "在用 " : "in use ") + inUse + "</span>" +
+    "<span>" + (currentLang === "zh" ? "總 " : "total ") + total + "</span>" +
+    (minS > 0 ? '<span class="' + (below ? "low" : "") + '">' + (currentLang === "zh" ? "最低 " : "min ") + minS + "</span>" : "") + "</div>";
   var admin = isAdmin ? (
     '<div class="stock-edit" style="display:flex">' +
       '<button class="adj-btn" onclick="adjustToolStock(' + t.id + ',-1)">-</button>' +
@@ -1524,10 +1600,11 @@ function toolCard(t) {
     '<div class="product-img">' + img + "</div>" +
     '<div class="product-info"><div class="info-top"><div>' +
       '<div class="product-name">' + esc(t.name) + "</div>" +
-      (t.notes ? '<div class="product-name-sub">' + esc(t.notes) + "</div>" : "") +
+      '<div class="product-name-sub">' + esc(t.category || "其他") + (t.notes ? " · " + esc(t.notes) : "") + "</div>" +
     "</div>" +
     '<div class="stock-area"><div class="stock-badge ' + stockClass + '">' + s + "</div>" +
-    '<div class="stock-label" data-zh="數量" data-en="Qty">數量</div></div></div>' + admin +
+    '<div class="stock-label"' + (below ? ' style="color:var(--danger);font-weight:800"' : "") + ">" + (below ? (currentLang === "zh" ? "需補貨" : "Restock") : (currentLang === "zh" ? "庫存" : "Stock")) + "</div></div></div>" +
+    meta + admin +
     "</div></div>";
 }
 function adjustToolStock(id, delta) {
@@ -1559,7 +1636,10 @@ function openToolForm(id) {
   title.setAttribute("data-zh", editToolId == null ? "新增工具" : "編輯工具");
   title.setAttribute("data-en", editToolId == null ? "Add tool" : "Edit tool");
   document.getElementById("tfName").value = t.name || "";
+  document.getElementById("tfCategory").value = t.category || "其他";
   document.getElementById("tfStock").value = t.stock != null ? t.stock : 0;
+  document.getElementById("tfInUse").value = t.in_use != null ? t.in_use : 0;
+  document.getElementById("tfMin").value = t.min_stock != null ? t.min_stock : 0;
   document.getElementById("tfNotes").value = t.notes || "";
   formImages.tf = t.image || null;
   document.getElementById("tfImgPreview").innerHTML = formImages.tf ? '<img src="' + esc(formImages.tf) + '">' : '<span class="no-img">🧹</span>';
@@ -1576,10 +1656,13 @@ async function saveToolForm() {
   await awaitImage("tf");
   var payload = {
     name: name,
+    category: document.getElementById("tfCategory").value,
     stock: document.getElementById("tfStock").value,
+    in_use: document.getElementById("tfInUse").value,
+    min_stock: document.getElementById("tfMin").value,
     notes: document.getElementById("tfNotes").value.trim(),
     image: formImages.tf,
-    status: "啟用",
+    status: editToolId != null ? undefined : "啟用",
   };
   if (editToolId != null) payload.id = editToolId;
   btn.textContent = "..."; btn.disabled = true;
@@ -1657,16 +1740,28 @@ function equipCard(e) {
   if (e.model && e.model.trim() && e.model !== titleLine) subBits.push(e.model);
   else if (e.brand) subBits.push(e.brand);
   return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
-    '<div class="vac-top"><div class="vac-img">' + img + "</div>" +
-    '<div class="vac-head"><div class="vac-model">' + esc(titleLine) + "</div>" +
-    (subBits.length ? '<div class="vac-brand">' + esc(subBits.join(" · ")) + "</div>" : "") +
-    '<div class="vac-badges">' +
-      (e.floor_code ? '<span class="floor-badge">' + esc(e.floor_code) + "</span>" : "") +
-      '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
-    "</div></div></div>" +
-    (e.notes ? '<div class="vac-notes">' + esc(e.notes) + "</div>" : "") +
-    '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
-    admin + "</div>";
+    '<div class="vac-img">' + img + "</div>" +
+    '<div class="vac-body">' +
+      '<div class="vac-head"><div class="vac-model">' + esc(titleLine) + "</div>" +
+        (subBits.length ? '<div class="vac-brand">' + esc(subBits.join(" · ")) + "</div>" : "") +
+        '<div class="vac-badges">' +
+          (e.floor_code ? '<span class="floor-badge">' + esc(e.floor_code) + "</span>" : "") +
+          '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
+        "</div></div>" +
+      accessorySummary(e) +
+      (e.notes ? '<div class="vac-notes">' + esc(e.notes) + "</div>" : "") +
+      '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+      admin +
+    "</div></div>";
+}
+function accessorySummary(e) {
+  var a = e.accessories;
+  if (!Array.isArray(a) || !a.length) return "";
+  var ok = a.filter(function (x) { return x && x.ok; }).length;
+  var full = ok === a.length;
+  return '<div class="acc-box' + (full ? "" : " bad") + '"><div class="acc-h">🧩 ' + (currentLang === "zh" ? "配件 " : "Parts ") + ok + "/" + a.length +
+    (full ? (currentLang === "zh" ? " 齊全" : " OK") : (currentLang === "zh" ? " ⚠ 缺件" : " ⚠ missing")) + "</div>" +
+    a.map(function (x) { return '<span class="acc-item ' + (x.ok ? "y" : "n") + '">' + (x.ok ? "✓ " : "✗ ") + esc(x.name || "") + "</span>"; }).join("") + "</div>";
 }
 async function toggleEquipmentStatus(id) {
   var e = equipment.find(function (x) { return x.id === id; });
@@ -1674,12 +1769,24 @@ async function toggleEquipmentStatus(id) {
   var res = await sb.rpc("update_equipment_status", { p_password: currentPwd, p_id: id, p_status: next });
   if (!res.error) { replaceLocal(equipment, res.data); render(); } else adminErr(res.error);
 }
+var efAccessories = [];
+function renderEfAccList() {
+  var c = document.getElementById("efAccList");
+  c.innerHTML = efAccessories.map(function (a, i) {
+    return '<div class="acc-row"><input type="checkbox" ' + (a.ok ? "checked" : "") + ' onchange="efAccessories[' + i + '].ok=this.checked">' +
+      '<input class="acc-name" value="' + esc(a.name || "") + '" oninput="efAccessories[' + i + '].name=this.value" data-zh-placeholder="配件名稱" data-en-placeholder="Part name" placeholder="配件名稱">' +
+      '<button type="button" class="acc-del" onclick="removeEfAccessory(' + i + ')">✕</button></div>';
+  }).join("");
+}
+function addEfAccessory() { efAccessories.push({ name: "", ok: true }); renderEfAccList(); }
+function removeEfAccessory(i) { efAccessories.splice(i, 1); renderEfAccList(); }
+function presetFridgeAccessories() { efAccessories = ["層架", "門邊條", "蛋架", "冷凍盒", "溫控旋鈕"].map(function (n) { return { name: n, ok: true }; }); renderEfAccList(); }
 function openEquipmentForm(id) {
   editEquipmentId = (id == null ? null : id);
   document.getElementById("efError").style.display = "none";
   document.getElementById("efImgFile").value = "";
   var typeSet = {};
-  ["保險箱", "空氣淨化機", "除濕機"].forEach(function (t) { typeSet[t] = 1; });
+  ["冰箱", "保險箱", "空氣淨化機", "除濕機", "加濕機"].forEach(function (t) { typeSet[t] = 1; });
   equipment.forEach(function (x) { if (x.type) typeSet[x.type] = 1; });
   document.getElementById("equipTypes").innerHTML = Object.keys(typeSet).map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
   var title = document.getElementById("emTitle");
@@ -1696,6 +1803,8 @@ function openEquipmentForm(id) {
   document.getElementById("efNotes").value = e.notes || "";
   formImages.ef = e.image || null;
   document.getElementById("efImgPreview").innerHTML = formImages.ef ? '<img src="' + esc(formImages.ef) + '">' : '<span class="no-img">🧰</span>';
+  efAccessories = Array.isArray(e.accessories) ? e.accessories.map(function (a) { return { name: a.name, ok: !!a.ok }; }) : [];
+  renderEfAccList();
   document.getElementById("equipModal").classList.add("show");
   applyLang();
 }
@@ -1717,6 +1826,7 @@ async function saveEquipForm() {
     status: document.getElementById("efStatus").value,
     notes: document.getElementById("efNotes").value.trim(),
     image: formImages.ef,
+    accessories: efAccessories.filter(function (a) { return (a.name || "").trim(); }).map(function (a) { return { name: a.name.trim(), ok: !!a.ok }; }),
   };
   if (editEquipmentId != null) payload.id = editEquipmentId;
   btn.textContent = "..."; btn.disabled = true;
