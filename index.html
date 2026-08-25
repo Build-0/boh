@@ -29,11 +29,20 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .page-header { background:linear-gradient(140deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%); color:#fff; padding:26px 22px 22px; text-align:center; position:relative; }
 .page-header h1 { font-size:33px; font-weight:800; letter-spacing:.5px; }
 .page-header .sub { font-size:15px; opacity:.68; margin-top:6px; letter-spacing:1px; }
-.lang-toggle { position:absolute; top:16px; right:18px; display:flex; border-radius:var(--pill); overflow:hidden; background:rgba(255,255,255,.12); padding:3px; backdrop-filter:blur(4px); }
-.lang-btn { padding:5px 13px; font-size:12px; font-weight:700; cursor:pointer; border:none; background:transparent; color:rgba(255,255,255,.7); font-family:inherit; border-radius:var(--pill); transition:.2s; }
-.lang-btn.active { background:#fff; color:var(--brand-2); }
-.lang-btn:hover { color:#fff; }
-.lang-btn.active:hover { color:var(--brand-2); }
+/* Settings gear + dropdown (top-right) */
+.settings { position:absolute; top:16px; right:18px; z-index:60; }
+.gear-btn { width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.32); background:rgba(255,255,255,.15); color:#fff; font-size:19px; cursor:pointer; transition:.15s; display:flex; align-items:center; justify-content:center; }
+.gear-btn:hover { background:rgba(255,255,255,.28); transform:rotate(30deg); }
+.settings-menu { display:none; position:absolute; top:48px; right:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--sh-hi); padding:12px; width:216px; text-align:left; }
+.settings-menu.show { display:block; }
+.set-label { font-size:11px; font-weight:800; color:var(--ink-3); margin:10px 2px 6px; letter-spacing:.4px; }
+.set-label:first-child { margin-top:0; }
+.set-btn { display:block; width:100%; text-align:left; padding:9px 12px; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; font-family:inherit; font-size:14px; font-weight:700; color:var(--ink); cursor:pointer; margin-top:6px; }
+.set-btn:hover { border-color:var(--accent); }
+.set-btn.on { background:var(--ok-bg); color:var(--ok); border-color:transparent; }
+.lang-toggle { display:flex; border-radius:var(--pill); overflow:hidden; background:var(--surface-2); padding:3px; }
+.lang-btn { flex:1; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--ink-3); font-family:inherit; border-radius:var(--pill); transition:.2s; }
+.lang-btn.active { background:var(--brand-2); color:#fff; }
 
 /* ---------- Module tab bar (sticky) ---------- */
 .module-bar { background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); display:flex; justify-content:center; gap:6px; padding:10px 12px; position:sticky; top:0; z-index:110; box-shadow:0 1px 0 rgba(20,35,48,.03); flex-wrap:wrap; }
@@ -317,9 +326,18 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 <div class="page-header">
   <h1 data-zh="酒店後勤系統" data-en="Hotel Back-of-House">酒店後勤系統</h1>
   <div class="sub" id="headerSub" data-zh="物料與設備管理" data-en="Supplies & Equipment">物料與設備管理</div>
-  <div class="lang-toggle">
-    <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
-    <button class="lang-btn" id="btnEn" onclick="setLang('en')">EN</button>
+  <div class="settings">
+    <button class="gear-btn" onclick="toggleSettings(event)" title="設定">⚙</button>
+    <div class="settings-menu" id="settingsMenu">
+      <div class="set-label" data-zh="語言 Language" data-en="Language">語言 Language</div>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
+        <button class="lang-btn" id="btnEn" onclick="setLang('en')">EN</button>
+      </div>
+      <div class="set-label" data-zh="管理員 Admin" data-en="Admin">管理員 Admin</div>
+      <button class="set-btn" id="setAdminBtn" onclick="toggleAdmin()">🔒 登入</button>
+      <button class="set-btn" id="setCatBtn" onclick="openCatManagerForModule()" style="display:none">⚙ 管理分類</button>
+    </div>
   </div>
 </div>
 
@@ -343,8 +361,6 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 </div>
 
 <button class="add-fab" id="addFab" onclick="openAddForModule()"><span id="addFabLabel" data-zh="＋ 新增產品" data-en="＋ Add">＋ 新增產品</span></button>
-<button class="admin-fab locked" id="adminFab" onclick="toggleAdmin()"><span data-zh="🔒 管理員" data-en="🔒 Admin">🔒 管理員</span></button>
-
 <!-- Login modal -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
@@ -848,7 +864,6 @@ function buildFilterChips() {
     var exn = expiringProductIds().length;
     if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
     h += chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
-    if (isAdmin) h += '<button class="chip" onclick="openCatManager(\'cleaning\')">⚙ ' + (currentLang === "zh" ? "管理分類" : "Categories") + "</button>";
   } else if (m === "vacuum") {
     var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
@@ -883,7 +898,6 @@ function buildFilterChips() {
     if (tdd) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", tdd, "danger");
     var tlow = lowToolIds().length;
     if (tlow) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", tlow, "danger");
-    if (isAdmin) h += '<button class="chip" onclick="openCatManager()">⚙ ' + (currentLang === "zh" ? "管理分類" : "Categories") + "</button>";
   }
   document.getElementById("filterBar").innerHTML = h;
 }
@@ -897,6 +911,7 @@ function render() {
   });
   buildFilterChips();
   updateExpiryTabBadge();
+  updateSettingsUI();
   var isReport = currentModule === "cleaning" && moduleFilter.cleaning === "report";
   var lab = MODULE_ADD_LABEL[currentModule];
   if (lab) { var labEl = document.getElementById("addFabLabel"); labEl.setAttribute("data-zh", lab.zh); labEl.setAttribute("data-en", lab.en); }
@@ -1953,7 +1968,33 @@ function openAddForModule() {
   else if (currentModule === "tool") openToolForm();
   else openEquipmentForm();
 }
-function toggleAdmin() { if (isAdmin) { logout(); return; } openLogin(); }
+function toggleSettings(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("settingsMenu").classList.toggle("show");
+}
+document.addEventListener("click", function (e) {
+  var s = document.querySelector(".settings");
+  if (s && !s.contains(e.target)) document.getElementById("settingsMenu").classList.remove("show");
+});
+function openCatManagerForModule() {
+  document.getElementById("settingsMenu").classList.remove("show");
+  if (currentModule === "cleaning") openCatManager("cleaning");
+  else if (currentModule === "tool") openCatManager("tool");
+}
+function updateSettingsUI() {
+  var ab = document.getElementById("setAdminBtn");
+  if (ab) {
+    if (isAdmin) { ab.className = "set-btn on"; ab.textContent = currentLang === "zh" ? "🔓 已登入（點此登出）" : "🔓 Logged in (log out)"; }
+    else { ab.className = "set-btn"; ab.textContent = currentLang === "zh" ? "🔒 登入" : "🔒 Log in"; }
+  }
+  var cb = document.getElementById("setCatBtn");
+  if (cb) {
+    var show = isAdmin && (currentModule === "cleaning" || currentModule === "tool");
+    cb.style.display = show ? "block" : "none";
+    cb.textContent = "⚙ " + (currentLang === "zh" ? "管理分類" : "Manage categories");
+  }
+}
+function toggleAdmin() { document.getElementById("settingsMenu").classList.remove("show"); if (isAdmin) { logout(); return; } openLogin(); }
 function openLogin() {
   document.getElementById("loginModal").classList.add("show");
   document.getElementById("pwdInput").value = "";
@@ -1974,10 +2015,6 @@ async function doLogin() {
   if (!res.error && res.data === true) {
     currentPwd = pwd; isAdmin = true;
     closeModal();
-    var fab = document.getElementById("adminFab");
-    fab.className = "admin-fab unlocked";
-    fab.querySelector("span").setAttribute("data-zh", "🔓 已登入");
-    fab.querySelector("span").setAttribute("data-en", "🔓 Logged in");
     render();
   } else if (res.error) {
     errEl.textContent = currentLang === "zh" ? "無法連接伺服器" : "Cannot connect to server"; errEl.style.display = "block";
@@ -1987,10 +2024,6 @@ async function doLogin() {
 }
 function logout() {
   isAdmin = false; currentPwd = "";
-  var fab = document.getElementById("adminFab");
-  fab.className = "admin-fab locked";
-  fab.querySelector("span").setAttribute("data-zh", "🔒 管理員");
-  fab.querySelector("span").setAttribute("data-en", "🔒 Admin");
   render();
 }
 
