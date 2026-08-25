@@ -26,14 +26,14 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 ::selection { background:#bfe3e8; }
 
 /* ---------- Header ---------- */
-.page-header { background:linear-gradient(140deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%); color:#fff; padding:26px 22px 22px; text-align:center; position:relative; }
+.page-header { background:linear-gradient(140deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%); color:#fff; padding:26px 22px 22px; text-align:center; position:relative; z-index:140; }
 .page-header h1 { font-size:33px; font-weight:800; letter-spacing:.5px; }
 .page-header .sub { font-size:15px; opacity:.68; margin-top:6px; letter-spacing:1px; }
 /* Settings gear + dropdown (top-right) */
-.settings { position:absolute; top:16px; right:18px; z-index:60; }
+.settings { position:absolute; top:16px; right:18px; z-index:200; }
 .gear-btn { width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.32); background:rgba(255,255,255,.15); color:#fff; font-size:19px; cursor:pointer; transition:.15s; display:flex; align-items:center; justify-content:center; }
 .gear-btn:hover { background:rgba(255,255,255,.28); transform:rotate(30deg); }
-.settings-menu { display:none; position:absolute; top:48px; right:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--sh-hi); padding:12px; width:216px; text-align:left; }
+.settings-menu { display:none; position:fixed; top:62px; right:16px; z-index:260; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--sh-hi); padding:12px; width:216px; text-align:left; }
 .settings-menu.show { display:block; }
 .set-label { font-size:11px; font-weight:800; color:var(--ink-3); margin:10px 2px 6px; letter-spacing:.4px; }
 .set-label:first-child { margin-top:0; }
