@@ -35,13 +35,16 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
 .gear-btn:hover { background:rgba(255,255,255,.28); transform:rotate(30deg); }
 .settings-menu { display:none; position:fixed; top:62px; right:16px; z-index:260; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--sh-hi); padding:12px; width:216px; text-align:left; }
 .settings-menu.show { display:block; }
-.set-label { font-size:11px; font-weight:800; color:var(--ink-3); margin:10px 2px 6px; letter-spacing:.4px; }
-.set-label:first-child { margin-top:0; }
-.set-btn { display:block; width:100%; text-align:left; padding:9px 12px; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; font-family:inherit; font-size:14px; font-weight:700; color:var(--ink); cursor:pointer; margin-top:6px; }
-.set-btn:hover { border-color:var(--accent); }
-.set-btn.on { background:var(--ok-bg); color:var(--ok); border-color:transparent; }
+.set-item { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:11px 12px; border:none; background:transparent; border-radius:10px; font-family:inherit; font-size:15px; font-weight:700; color:var(--ink); cursor:pointer; }
+.set-item:hover { background:var(--surface-2); }
+.set-item.on { color:var(--ok); }
+.set-cur { margin-left:auto; font-size:13px; font-weight:600; color:var(--ink-3); }
+.set-caret { color:var(--ink-3); font-size:16px; transition:.2s; }
+.set-item[aria-expanded="true"] .set-caret { transform:rotate(90deg); }
+.set-sub { display:none; padding:4px 8px 8px; }
+.set-sub.show { display:block; }
 .lang-toggle { display:flex; border-radius:var(--pill); overflow:hidden; background:var(--surface-2); padding:3px; }
-.lang-btn { flex:1; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--ink-3); font-family:inherit; border-radius:var(--pill); transition:.2s; }
+.lang-btn { flex:1; padding:8px 12px; font-size:14px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--ink-3); font-family:inherit; border-radius:var(--pill); transition:.2s; }
 .lang-btn.active { background:var(--brand-2); color:#fff; }
 
 /* ---------- Module tab bar (sticky) ---------- */
@@ -329,14 +332,13 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
   <div class="settings">
     <button class="gear-btn" onclick="toggleSettings(event)" title="設定">⚙</button>
     <div class="settings-menu" id="settingsMenu">
-      <div class="set-label" data-zh="語言 Language" data-en="Language">語言 Language</div>
-      <div class="lang-toggle">
+      <button class="set-item" onclick="toggleLangSub(event)">🌐 <span data-zh="語言" data-en="Language">語言</span><span class="set-cur" id="langCur">中文</span><span class="set-caret">›</span></button>
+      <div class="set-sub" id="langSub">
         <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
         <button class="lang-btn" id="btnEn" onclick="setLang('en')">EN</button>
       </div>
-      <div class="set-label" data-zh="管理員 Admin" data-en="Admin">管理員 Admin</div>
-      <button class="set-btn" id="setAdminBtn" onclick="toggleAdmin()">🔒 登入</button>
-      <button class="set-btn" id="setCatBtn" onclick="openCatManagerForModule()" style="display:none">⚙ 管理分類</button>
+      <button class="set-item" id="setAdminBtn" onclick="toggleAdmin()">🔒 登入</button>
+      <button class="set-item" id="setCatBtn" onclick="openCatManagerForModule()" style="display:none">⚙ 管理分類</button>
     </div>
   </div>
 </div>
@@ -680,6 +682,7 @@ var vacuums = [];
 var vacMaint = [];
 var tools = [];
 var toolCategories = [];  // {id, name, sort_order} — managed list
+var equipTypesList = [];  // {id, name, sort_order} — managed equipment types
 var equipment = [];
 var equipMaint = [];
 var batches = [];        // product_batches
@@ -726,6 +729,8 @@ async function loadAll() {
   tools = t.error ? [] : (t.data || []);
   var tc = await sb.from("tool_categories").select("*").order("sort_order");
   toolCategories = tc.error ? [] : (tc.data || []);
+  var et = await sb.from("equipment_types").select("*").order("sort_order");
+  equipTypesList = et.error ? [] : (et.data || []);
   var e = await sb.from("equipment").select("*").order("type").order("model");
   equipment = e.error ? [] : (e.data || []);
   var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
@@ -849,6 +854,8 @@ function toolCatNames() {
 }
 function toolCatRank(name) { var i = toolCatNames().indexOf(name); return i < 0 ? 998 : i; }
 function toolCatCmp(a, b) { return (toolCatRank(a) - toolCatRank(b)) || natCmp(a, b); }
+function eqTypeNames() { return equipTypesList.length ? equipTypesList.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
+function eqTypeCmp(a, b) { var arr = eqTypeNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
 function buildFilterChips() {
   var m = currentModule, h = "";
   if (m === "cleaning") {
@@ -886,7 +893,7 @@ function buildFilterChips() {
     if (er) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", er, "warn");
     if (es) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", es, "danger");
     var ty = {}; en.forEach(function (e) { var t = e.type || "其他"; ty[t] = (ty[t] || 0) + 1; });
-    var tkeys = Object.keys(ty).sort(natCmp);
+    var tkeys = Object.keys(ty).sort(eqTypeCmp);
     if (tkeys.length) h += '<span class="chip-break"></span>';
     tkeys.forEach(function (t) { h += chipHtml("type-" + t, t, ty[t]); });
   } else if (m === "tool") {
@@ -1731,6 +1738,9 @@ function openCatManager(mode) {
   if (catMgrMode === "cleaning") {
     catMgr = categories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name_zh, name_en: c.name_en, icon: c.icon }; });
     title.setAttribute("data-zh", "管理清潔劑分類"); title.setAttribute("data-en", "Chemical categories");
+  } else if (catMgrMode === "equipment") {
+    catMgr = equipTypesList.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; });
+    title.setAttribute("data-zh", "管理設備類型"); title.setAttribute("data-en", "Equipment types");
   } else {
     catMgr = toolCategories.length
       ? toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; })
@@ -1775,7 +1785,7 @@ async function saveCatManager() {
     if (!cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
     names = cats.map(function (a) { return a.name; });
     if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
-    res = await sb.rpc("save_tool_categories", { p_password: currentPwd, p_cats: cats });
+    res = await sb.rpc(catMgrMode === "equipment" ? "save_equipment_types" : "save_tool_categories", { p_password: currentPwd, p_cats: cats });
   }
   btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
   if (!res.error) {
@@ -1783,6 +1793,9 @@ async function saveCatManager() {
     if (catMgrMode === "cleaning") {
       var cc = await sb.from("categories").select("*").order("sort_order"); if (!cc.error) categories = cc.data || [];
       var pr = await sb.from("products").select("*").order("sort_order"); if (!pr.error) products = pr.data || [];
+    } else if (catMgrMode === "equipment") {
+      var ec = await sb.from("equipment_types").select("*").order("sort_order"); if (!ec.error) equipTypesList = ec.data || [];
+      var eq = await sb.from("equipment").select("*").order("type").order("model"); if (!eq.error) equipment = eq.data || [];
     } else {
       var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
       var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
@@ -1821,7 +1834,7 @@ function renderEquipment() {
   if (repAll.length) html += slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", repAll.length, "repair") + '<div class="vac-grid">' + repAll.map(equipCard).join("") + "</div>";
   var groups = {};
   equipment.filter(function (e) { return e.status === "正常"; }).forEach(function (e) { var k = e.type || "其他"; (groups[k] = groups[k] || []).push(e); });
-  Object.keys(groups).sort(natCmp).forEach(function (k) {
+  Object.keys(groups).sort(eqTypeCmp).forEach(function (k) {
     groups[k].sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
     html += slimHead("🧰 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(equipCard).join("") + "</div>";
   });
@@ -1899,6 +1912,7 @@ function openEquipmentForm(id) {
   document.getElementById("efError").style.display = "none";
   document.getElementById("efImgFile").value = "";
   var typeSet = {};
+  eqTypeNames().forEach(function (t) { typeSet[t] = 1; });
   ["冰箱", "保險箱", "空氣淨化機", "除濕機", "加濕機"].forEach(function (t) { typeSet[t] = 1; });
   equipment.forEach(function (x) { if (x.type) typeSet[x.type] = 1; });
   document.getElementById("equipTypes").innerHTML = Object.keys(typeSet).map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
@@ -1970,7 +1984,13 @@ function openAddForModule() {
 }
 function toggleSettings(e) {
   if (e) e.stopPropagation();
-  document.getElementById("settingsMenu").classList.toggle("show");
+  var m = document.getElementById("settingsMenu");
+  m.classList.toggle("show");
+  if (!m.classList.contains("show")) document.getElementById("langSub").classList.remove("show");
+}
+function toggleLangSub(e) {
+  if (e) e.stopPropagation();
+  document.getElementById("langSub").classList.toggle("show");
 }
 document.addEventListener("click", function (e) {
   var s = document.querySelector(".settings");
@@ -1978,20 +1998,21 @@ document.addEventListener("click", function (e) {
 });
 function openCatManagerForModule() {
   document.getElementById("settingsMenu").classList.remove("show");
-  if (currentModule === "cleaning") openCatManager("cleaning");
-  else if (currentModule === "tool") openCatManager("tool");
+  openCatManager(currentModule);  // cleaning | tool | equipment
 }
 function updateSettingsUI() {
+  var lc = document.getElementById("langCur"); if (lc) lc.textContent = currentLang === "zh" ? "中文" : "EN";
   var ab = document.getElementById("setAdminBtn");
   if (ab) {
-    if (isAdmin) { ab.className = "set-btn on"; ab.textContent = currentLang === "zh" ? "🔓 已登入（點此登出）" : "🔓 Logged in (log out)"; }
-    else { ab.className = "set-btn"; ab.textContent = currentLang === "zh" ? "🔒 登入" : "🔒 Log in"; }
+    if (isAdmin) { ab.className = "set-item on"; ab.textContent = currentLang === "zh" ? "🔓 已登入（點此登出）" : "🔓 Logged in (log out)"; }
+    else { ab.className = "set-item"; ab.textContent = currentLang === "zh" ? "🔒 管理員登入" : "🔒 Admin log in"; }
   }
   var cb = document.getElementById("setCatBtn");
   if (cb) {
-    var show = isAdmin && (currentModule === "cleaning" || currentModule === "tool");
-    cb.style.display = show ? "block" : "none";
-    cb.textContent = "⚙ " + (currentLang === "zh" ? "管理分類" : "Manage categories");
+    var CAT_LABEL = { cleaning: "清潔劑分類", tool: "工具分類", equipment: "設備類型" };
+    var show = isAdmin && CAT_LABEL[currentModule];
+    cb.style.display = show ? "flex" : "none";
+    if (show) cb.textContent = "⚙ " + (currentLang === "zh" ? "管理" + CAT_LABEL[currentModule] : "Manage categories");
   }
 }
 function toggleAdmin() { document.getElementById("settingsMenu").classList.remove("show"); if (isAdmin) { logout(); return; } openLogin(); }
