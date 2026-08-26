@@ -683,6 +683,7 @@ var vacMaint = [];
 var tools = [];
 var toolCategories = [];  // {id, name, sort_order} — managed list
 var equipTypesList = [];  // {id, name, sort_order} — managed equipment types
+var vacuumFloors = [];    // {id, name, sort_order} — managed vacuum floors/areas
 var equipment = [];
 var equipMaint = [];
 var batches = [];        // product_batches
@@ -731,6 +732,8 @@ async function loadAll() {
   toolCategories = tc.error ? [] : (tc.data || []);
   var et = await sb.from("equipment_types").select("*").order("sort_order");
   equipTypesList = et.error ? [] : (et.data || []);
+  var vf = await sb.from("vacuum_floors").select("*").order("sort_order");
+  vacuumFloors = vf.error ? [] : (vf.data || []);
   var e = await sb.from("equipment").select("*").order("type").order("model");
   equipment = e.error ? [] : (e.data || []);
   var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
@@ -856,6 +859,8 @@ function toolCatRank(name) { var i = toolCatNames().indexOf(name); return i < 0 
 function toolCatCmp(a, b) { return (toolCatRank(a) - toolCatRank(b)) || natCmp(a, b); }
 function eqTypeNames() { return equipTypesList.length ? equipTypesList.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
 function eqTypeCmp(a, b) { var arr = eqTypeNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
+function vacFloorNames() { return vacuumFloors.length ? vacuumFloors.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
+function vacFloorCmp(a, b) { var arr = vacFloorNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
 function buildFilterChips() {
   var m = currentModule, h = "";
   if (m === "cleaning") {
@@ -879,7 +884,7 @@ function buildFilterChips() {
     if (vr) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", vr, "warn");
     if (vs) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", vs, "danger");
     var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
-    var fkeys = Object.keys(fl).sort(natCmp);
+    var fkeys = Object.keys(fl).sort(vacFloorCmp);
     var isGuest = function (k) { var mm = String(k).match(/^(\d+)\s*F/i); return !!(mm && +mm[1] >= 3 && +mm[1] <= 12); };
     var f312 = fkeys.filter(isGuest);
     var others = fkeys.filter(function (k) { return !isGuest(k); });
@@ -1430,7 +1435,7 @@ function renderVacuum() {
   if (repAll.length) html += slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", repAll.length, "repair") + '<div class="vac-grid">' + repAll.map(vacCard).join("") + "</div>";
   var groups = {};
   vacuums.filter(function (v) { return v.status === "正常"; }).forEach(function (v) { var k = floorKey(v.floor_code); (groups[k] = groups[k] || []).push(v); });
-  Object.keys(groups).sort(natCmp).forEach(function (k) {
+  Object.keys(groups).sort(vacFloorCmp).forEach(function (k) {
     groups[k].sort(byLabel);
     html += slimHead("🏢 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(vacCard).join("") + "</div>";
   });
@@ -1741,6 +1746,9 @@ function openCatManager(mode) {
   } else if (catMgrMode === "equipment") {
     catMgr = equipTypesList.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; });
     title.setAttribute("data-zh", "管理設備類型"); title.setAttribute("data-en", "Equipment types");
+  } else if (catMgrMode === "vacuum") {
+    catMgr = vacuumFloors.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; });
+    title.setAttribute("data-zh", "管理樓層/區域"); title.setAttribute("data-en", "Floors / areas");
   } else {
     catMgr = toolCategories.length
       ? toolCategories.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return { id: c.id, name: c.name }; })
@@ -1782,10 +1790,11 @@ async function saveCatManager() {
     res = await sb.rpc("save_categories", { p_password: currentPwd, p_cats: ccats });
   } else {
     var cats = catMgr.map(function (a) { return { id: a.id, name: (a.name || "").trim() }; }).filter(function (a) { return a.name; });
-    if (!cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
+    if ((catMgrMode === "tool" || catMgrMode === "equipment") && !cats.some(function (a) { return a.name === "其他"; })) cats.push({ name: "其他" });
     names = cats.map(function (a) { return a.name; });
-    if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "分類名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
-    res = await sb.rpc(catMgrMode === "equipment" ? "save_equipment_types" : "save_tool_categories", { p_password: currentPwd, p_cats: cats });
+    if (new Set(names).size !== names.length) { errEl.textContent = currentLang === "zh" ? "名稱不可重複" : "Duplicate names"; errEl.style.display = "block"; btn.disabled = false; btn.textContent = currentLang === "zh" ? "儲存" : "Save"; return; }
+    var rpcName = catMgrMode === "equipment" ? "save_equipment_types" : catMgrMode === "vacuum" ? "save_vacuum_floors" : "save_tool_categories";
+    res = await sb.rpc(rpcName, { p_password: currentPwd, p_cats: cats });
   }
   btn.textContent = currentLang === "zh" ? "儲存" : "Save"; btn.disabled = false;
   if (!res.error) {
@@ -1796,6 +1805,9 @@ async function saveCatManager() {
     } else if (catMgrMode === "equipment") {
       var ec = await sb.from("equipment_types").select("*").order("sort_order"); if (!ec.error) equipTypesList = ec.data || [];
       var eq = await sb.from("equipment").select("*").order("type").order("model"); if (!eq.error) equipment = eq.data || [];
+    } else if (catMgrMode === "vacuum") {
+      var vf2 = await sb.from("vacuum_floors").select("*").order("sort_order"); if (!vf2.error) vacuumFloors = vf2.data || [];
+      var vac2 = await sb.from("vacuums").select("*").order("floor_code").order("model"); if (!vac2.error) vacuums = vac2.data || [];
     } else {
       var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
       var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
@@ -2009,7 +2021,7 @@ function updateSettingsUI() {
   }
   var cb = document.getElementById("setCatBtn");
   if (cb) {
-    var CAT_LABEL = { cleaning: "清潔劑分類", tool: "工具分類", equipment: "設備類型" };
+    var CAT_LABEL = { cleaning: "清潔劑分類", tool: "工具分類", equipment: "設備類型", vacuum: "樓層/區域" };
     var show = isAdmin && CAT_LABEL[currentModule];
     cb.style.display = show ? "flex" : "none";
     if (show) cb.textContent = "⚙ " + (currentLang === "zh" ? "管理" + CAT_LABEL[currentModule] : "Manage categories");
