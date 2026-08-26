@@ -18,6 +18,16 @@ select name, row_number() over (order by name)
 from (select distinct btrim(floor_code) as name from vacuums where coalesce(btrim(floor_code),'') <> '') s
 on conflict (name) do nothing;
 
+-- 修正排序為自然順序：數字樓層優先且遞增(3F→12F)，其餘依名稱
+update vacuum_floors v set sort_order = o.rn
+from (
+  select id, row_number() over (
+    order by (nullif(regexp_replace(name, '^(\d*).*$', '\1'), ''))::int nulls last, name
+  ) as rn
+  from vacuum_floors
+) o
+where v.id = o.id;
+
 create or replace function save_vacuum_floors(p_password text, p_cats jsonb)
 returns void language plpgsql security definer set search_path = public, extensions as $$
 declare
