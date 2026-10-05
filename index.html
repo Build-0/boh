@@ -445,6 +445,33 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 .app-ver { font-size:11px; opacity:.55; margin-top:4px; letter-spacing:.3px; font-variant-numeric:tabular-nums; }
 .set-ver { margin-top:6px; padding:9px 12px 2px; border-top:1px solid var(--line-2); font-size:12px; color:var(--ink-3); font-weight:600; font-variant-numeric:tabular-nums; }
 @media (max-width:700px) { .app-ver { margin-top:1px; font-size:10.5px; } }
+/* dropdown chip (floors / categories / types) */
+.sel-chip { position:relative; }
+.sel-chip select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; -webkit-appearance:none; appearance:none; }
+
+/* Cards on phones: small square thumbnail beside the title instead of a
+   full-height photo column — details use the full card width below. */
+@media (max-width:700px) {
+  .product-card, .vac-card { display:grid; grid-template-columns:76px minmax(0,1fr); align-items:start; }
+  .product-info, .vac-body { display:contents; }
+  .product-img, .vac-img { grid-column:1; grid-row:1; width:64px; height:64px; min-height:0; margin:12px 0 0 12px; padding:3px; border:1px solid var(--line-2); border-radius:12px; align-self:start; }
+  .product-img img, .vac-img img { max-width:100%; max-height:100%; border-radius:8px; }
+  .product-img .no-img, .vac-img .no-img { font-size:26px; }
+  .product-info > .info-top { grid-column:2; grid-row:1; padding:12px 13px 4px 4px; margin:0; }
+  .vac-body > .vac-head { grid-column:2; grid-row:1; padding:12px 13px 4px 4px; }
+  .product-info > :not(.info-top), .vac-body > :not(.vac-head) { grid-column:1 / -1; }
+  .product-info > .detail-table { margin:4px 13px 0; width:calc(100% - 26px); }
+  .product-info > .batch-box { margin:9px 13px 0; }
+  .product-info > .stock-edit, .product-info > .status-row, .product-info > .tool-meta, .product-info > .note { margin-left:13px; margin-right:13px; }
+  .product-info > :last-child { margin-bottom:13px; }
+  .vac-card.brand-nil, .vac-card.brand-wet { border-left-width:4px; }
+  .vac-notes { padding:2px 13px 10px; }
+}
+@media (max-width:700px) {
+  .filter-bar { gap:6px; padding:8px 10px 10px; }
+  .chip { padding:7px 11px; font-size:13.5px; gap:4px; }
+  .chip .c-n { padding:0 5px; }
+}
 </style>
 </head>
 <body>
@@ -1074,55 +1101,64 @@ function eqTypeCmp(a, b) { var arr = eqTypeNames(); var ia = arr.indexOf(a), ib 
 function vacFloorNames() { return vacuumFloors.length ? vacuumFloors.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
 function floorNum(k) { var mm = String(k || "").match(/^(\d+)\s*F$/i); return mm ? +mm[1] : null; }
 function vacFloorCmp(a, b) { var na = floorNum(a), nb = floorNum(b); if (na != null || nb != null) return na == null ? 1 : nb == null ? -1 : na - nb; var arr = vacFloorNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
+// Dropdown "chip": groups many options (floors, categories, types) into one
+// control so the filter row stays short. Shows the chosen option when active.
+function selectChip(prefix, label, opts) {
+  if (!opts.length) return "";
+  var cur = moduleFilter[currentModule];
+  var on = cur.indexOf(prefix) === 0;
+  var curOpt = on ? opts.filter(function (o) { return prefix + o.key === cur; })[0] : null;
+  var h = '<label class="chip sel-chip' + (on ? " on" : "") + '"><span>' + esc(curOpt ? curOpt.label : label) +
+    (curOpt ? ' <span class="c-n">' + curOpt.n + "</span>" : "") + ' ▾</span>' +
+    '<select onchange="setFilter(this.value)" aria-label="' + esc(label) + '">' +
+    '<option value="all"' + (on ? "" : " selected") + ">" + esc(label) + "：" + (currentLang === "zh" ? "全部" : "All") + "</option>";
+  opts.forEach(function (o) {
+    h += '<option value="' + esc(prefix + o.key) + '"' + (curOpt === o ? " selected" : "") + ">" + esc(o.label) + "（" + o.n + "）</option>";
+  });
+  return h + "</select></label>";
+}
 function buildFilterChips() {
-  var m = currentModule, h = "";
+  var m = currentModule, h = "", zh = currentLang === "zh";
   if (m === "cleaning") {
     var act = products.filter(function (p) { return p.status !== "停用"; });
     var dis = products.length - act.length;
-    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", act.length);
-    categories.forEach(function (c) { var n = act.filter(function (p) { return p.category_id === c.id; }).length; if (n) h += chipHtml("cat-" + c.id, (currentLang === "zh" ? c.name_zh : c.name_en) || c.name_zh, n); });
-    // special filters on their own row
-    h += '<span class="chip-break"></span>';
-    if (dis) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", dis, "danger");
+    h += chipHtml("all", zh ? "全部" : "All", act.length);
+    h += selectChip("cat-", zh ? "分類" : "Category", categories.map(function (c) {
+      return { key: String(c.id), label: (zh ? c.name_zh : c.name_en) || c.name_zh, n: act.filter(function (p) { return p.category_id === c.id; }).length };
+    }).filter(function (o) { return o.n; }));
     var lown = lowStockIds().length;
-    if (lown) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", lown, "danger");
+    if (lown) h += chipHtml("low", zh ? "🛒 補貨" : "🛒 Restock", lown, "danger");
     var exn = expiringProductIds().length;
-    if (exn) h += chipHtml("expiring", currentLang === "zh" ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
-    h += chipHtml("report", currentLang === "zh" ? "📊 用量報表" : "📊 Report", null, "report");
+    if (exn) h += chipHtml("expiring", zh ? "⚠️ 臨期" : "⚠️ Expiring", exn, "warn");
+    h += chipHtml("report", zh ? "📊 報表" : "📊 Report", null, "report");
+    if (dis) h += chipHtml("disabled", zh ? "停用" : "Disabled", dis, "danger");
   } else if (m === "vacuum") {
     var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
     var vs = vacuums.filter(function (v) { return v.status === "報廢"; }).length;
-    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", vn.length);
-    if (vr) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", vr, "warn");
-    if (vs) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", vs, "danger");
+    h += chipHtml("all", zh ? "全部" : "All", vn.length);
     var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
-    var fkeys = Object.keys(fl).sort(vacFloorCmp);
-    var isGuest = function (k) { var mm = String(k).match(/^(\d+)\s*F/i); return !!(mm && +mm[1] >= 3 && +mm[1] <= 12); };
-    var f312 = fkeys.filter(isGuest);
-    var others = fkeys.filter(function (k) { return !isGuest(k); });
-    if (f312.length) { h += '<span class="chip-break"></span>'; f312.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); }); }
-    if (others.length) { h += '<span class="chip-break"></span>'; others.forEach(function (f) { h += chipHtml("floor-" + f, f, fl[f]); }); }
+    h += selectChip("floor-", zh ? "📍 位置" : "📍 Floor", Object.keys(fl).sort(vacFloorCmp).map(function (f) { return { key: f, label: f, n: fl[f] }; }));
+    if (vr) h += chipHtml("repair", zh ? "🔧 維修中" : "🔧 Repair", vr, "warn");
+    if (vs) h += chipHtml("scrap", zh ? "⚫ 報廢" : "⚫ Scrapped", vs, "danger");
   } else if (m === "equipment") {
     var en = equipment.filter(function (e) { return e.status !== "報廢"; });
     var er = equipment.filter(function (e) { return e.status === "維修中"; }).length;
     var es = equipment.filter(function (e) { return e.status === "報廢"; }).length;
-    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", en.length);
-    if (er) h += chipHtml("repair", currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", er, "warn");
-    if (es) h += chipHtml("scrap", currentLang === "zh" ? "⚫ 報廢區" : "⚫ Scrapped", es, "danger");
+    h += chipHtml("all", zh ? "全部" : "All", en.length);
     var ty = {}; en.forEach(function (e) { var t = e.type || "其他"; ty[t] = (ty[t] || 0) + 1; });
-    var tkeys = Object.keys(ty).sort(eqTypeCmp);
-    if (tkeys.length) h += '<span class="chip-break"></span>';
-    tkeys.forEach(function (t) { h += chipHtml("type-" + t, t, ty[t]); });
+    h += selectChip("type-", zh ? "類型" : "Type", Object.keys(ty).sort(eqTypeCmp).map(function (t) { return { key: t, label: t, n: ty[t] }; }));
+    if (er) h += chipHtml("repair", zh ? "🔧 維修中" : "🔧 Repair", er, "warn");
+    if (es) h += chipHtml("scrap", zh ? "⚫ 報廢" : "⚫ Scrapped", es, "danger");
   } else if (m === "tool") {
     var ta = tools.filter(function (t) { return t.status !== "停用"; });
     var tdd = tools.length - ta.length;
-    h += chipHtml("all", currentLang === "zh" ? "全部" : "All", ta.length);
+    h += chipHtml("all", zh ? "全部" : "All", ta.length);
     var tcat = {}; ta.forEach(function (t) { var c = t.category || "其他"; tcat[c] = (tcat[c] || 0) + 1; });
-    Object.keys(tcat).sort(toolCatCmp).forEach(function (c) { h += chipHtml("cat-" + c, c, tcat[c]); });
-    if (tdd) h += chipHtml("disabled", currentLang === "zh" ? "停用" : "Disabled", tdd, "danger");
+    h += selectChip("cat-", zh ? "分類" : "Category", Object.keys(tcat).sort(toolCatCmp).map(function (c) { return { key: c, label: c, n: tcat[c] }; }));
     var tlow = lowToolIds().length;
-    if (tlow) h += chipHtml("low", currentLang === "zh" ? "🛒 需補貨" : "🛒 Restock", tlow, "danger");
+    if (tlow) h += chipHtml("low", zh ? "🛒 補貨" : "🛒 Restock", tlow, "danger");
+    if (tdd) h += chipHtml("disabled", zh ? "停用" : "Disabled", tdd, "danger");
   }
   document.getElementById("filterBar").innerHTML = h;
 }
