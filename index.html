@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e2a33">
 <title>酒店後勤系統 Hotel Back-of-House</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -322,6 +323,124 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
   .lang-btn { padding:4px 11px; font-size:11px; }
 }
 
+/* ============================================================
+   Mobile-first layout (v2): slim app bar · bottom tab bar ·
+   always-visible search · one-row scrolling filter chips
+   ============================================================ */
+html { -webkit-text-size-adjust:100%; }
+body { padding-bottom:env(safe-area-inset-bottom); }
+button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+
+/* module bar — desktop: centered row under header */
+.module-bar { position:static; background:var(--surface); padding:10px 12px; border-bottom:1px solid var(--line-2); display:flex; justify-content:center; gap:8px; flex-wrap:nowrap; }
+.module-btn { position:relative; }
+.module-btn .ml { white-space:nowrap; }
+
+/* search field (always visible) */
+.search-row, .search-row.show { display:flex; padding:10px 12px 4px; }
+.search-field { position:relative; flex:1; max-width:640px; margin:0 auto; }
+.search-field .search-ico { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.55; pointer-events:none; }
+.search-row input { width:100%; padding:11px 42px 11px 38px; font-size:16px; border:1px solid var(--line); background:var(--surface-2); box-shadow:none; border-radius:var(--pill); -webkit-appearance:none; appearance:none; }
+.search-row input::-webkit-search-cancel-button { display:none; }
+.search-row input:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(31,111,124,.12); }
+.search-close { display:none; position:absolute; right:5px; top:50%; transform:translateY(-50%); width:32px; height:32px; border:none; background:var(--surface-3); }
+.search-row.has-q .search-close { display:block; }
+.search-row.has-q + .filter-bar { opacity:.45; }
+
+/* filter chips: ONE row, swipe sideways */
+.filter-bar { flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:8px 12px 10px; gap:7px; }
+.filter-bar::-webkit-scrollbar { display:none; }
+.filter-bar .chip-break { display:none; }
+.filter-bar .chip { scroll-snap-align:start; }
+@media (min-width:701px) { .filter-bar { flex-wrap:wrap; justify-content:center; overflow:visible; } }
+
+/* maintenance list: collapsed shows newest only */
+.maint-title { display:flex; align-items:center; gap:6px; }
+.maint-n { background:var(--surface-3); color:var(--ink-2); border-radius:var(--pill); padding:0 7px; font-size:11px; }
+.maint-box.collapsed .maint-item:nth-of-type(n+3) { display:none; }
+.maint-box.collapsed .maint-item { border-bottom:none; }
+.maint-more { margin-top:6px; width:100%; padding:8px; border:1px dashed var(--line); background:var(--surface); border-radius:9px; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--accent); cursor:pointer; }
+
+/* no hover lift on touch screens */
+@media (hover:none) {
+  .product-card:hover, .vac-card:hover { transform:none; box-shadow:var(--sh); border-color:var(--line); }
+  .gear-btn:hover { transform:none; }
+}
+
+@media (max-width:700px) {
+  /* slim app bar */
+  .page-header { padding:calc(10px + env(safe-area-inset-top)) 64px 10px 16px; text-align:left; }
+  .page-header h1 { font-size:20px; letter-spacing:.3px; }
+  .page-header .sub { display:none; }
+  .settings { top:calc(7px + env(safe-area-inset-top)); right:12px; }
+  .gear-btn { width:38px; height:38px; font-size:18px; }
+  .settings-menu { top:calc(52px + env(safe-area-inset-top)); right:10px; width:236px; }
+  .set-item { padding:13px 12px; }
+
+  /* bottom tab bar */
+  .module-bar { position:fixed; top:auto; left:0; right:0; bottom:0; z-index:150; gap:0; padding:4px 4px calc(4px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.97); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid var(--line); border-bottom:none; box-shadow:0 -4px 16px rgba(20,35,48,.06); }
+  .module-btn, .module-btn:hover { flex:1 1 0; flex-direction:column; gap:2px; padding:6px 2px 5px; border:none; border-radius:12px; background:transparent; box-shadow:none; color:var(--ink-3); font-size:11.5px; }
+  .module-btn .mi { font-size:23px; transition:transform .15s; }
+  .module-btn.active { background:var(--surface-2); color:var(--brand-2); box-shadow:none; }
+  .module-btn.active .mi { transform:scale(1.08); }
+  .module-btn .tab-alert { position:absolute; top:3px; left:calc(50% + 8px); margin:0; }
+
+  /* sticky top: search + chips only */
+  .topnav { top:0; }
+  .search-row, .search-row.show { padding:8px 12px 2px; }
+  .chip { padding:8px 14px; font-size:14px; }
+
+  .container { padding:10px 12px calc(96px + env(safe-area-inset-bottom)); }
+  .mod-caption { padding:6px 4px 2px; }
+  .alert-expiry { padding:12px 14px; font-size:14px; }
+  .slim-head { font-size:14px; margin:16px 2px 8px; }
+  .brandlegend { padding:8px 2px 0; }
+
+  /* cards: denser image column, larger readable text */
+  .product-img, .vac-img { width:84px; min-height:100px; padding:6px; }
+  .product-img img, .vac-img img { max-height:96px; }
+  .product-info { padding:12px 13px; }
+  .vac-head { padding:12px 13px 4px; }
+  .vac-notes { padding:0 13px 10px; font-size:13px; }
+  .maint-box { padding:10px 13px; }
+  .detail-table td { font-size:13px; padding:4px 0; }
+  .dt-label { width:72px; }
+  .rinse-yes, .rinse-no { font-size:12px; }
+  .vac-brand, .product-name-sub { font-size:13px; }
+  .maint-item { font-size:13px; }
+  .maint-date { font-size:12px; }
+  .floor-badge, .vac-status, .brand-tag { font-size:12px; }
+  .batch-item { font-size:13px; }
+  .acc-box { margin:0 13px 8px; }
+
+  /* admin controls: thumb-sized */
+  .mini-btn, .toggle-btn, .edit-btn, .del-btn { min-height:38px; padding:8px 13px; font-size:13px; border-radius:10px; }
+  .state-pill { font-size:12px; padding:5px 10px; }
+  .vac-actions { padding:10px 13px; gap:8px; }
+  .vac-actions .mini-btn { flex:1 1 auto; }
+  .stock-edit .mini-btn { flex:1; }
+  .adj-btn, .stock-input, .save-btn { height:38px; }
+  .adj-btn { width:38px; }
+  .batch-mini { width:30px; height:30px; font-size:13px; }
+  .maint-del { font-size:16px; padding:2px 6px; }
+
+  /* FAB sits above the tab bar */
+  .add-fab, .admin-fab { bottom:calc(74px + env(safe-area-inset-bottom)); right:14px; padding:12px 18px; font-size:14px; }
+
+  /* modals become bottom sheets */
+  .modal-overlay { align-items:flex-end; padding:0; }
+  .modal-box { max-width:none; border-radius:20px 20px 0 0; padding:22px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .form-modal { max-height:88vh; }
+  .modal-box input, .modal-box select, .form-modal textarea { font-size:16px; }
+  .modal-btns button { padding:14px; font-size:15px; }
+  .form-modal .row2 { flex-direction:column; gap:0; }
+}
+/* compact alert pills (chemicals) */
+.alert-row { display:flex; gap:8px; margin:10px 0 4px; flex-wrap:wrap; }
+.alert-pill { flex:1 1 0; min-width:140px; display:flex; align-items:center; gap:6px; padding:10px 12px; border-radius:12px; font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer; text-align:left; border:1px solid; }
+.alert-pill .go { margin-left:auto; font-size:18px; line-height:1; opacity:.7; }
+.alert-pill.danger { background:var(--danger-bg); border-color:#f0b3ad; color:#a8362c; }
+.alert-pill.warn { background:var(--warn-bg); border-color:#f2c68a; color:#9a5410; }
 </style>
 </head>
 <body>
@@ -343,19 +462,22 @@ body { font-family:'Inter','Noto Sans TC',sans-serif; background:var(--bg); colo
   </div>
 </div>
 
+<nav class="module-bar" id="moduleBar">
+  <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')"><span class="mi">🧴</span><span class="ml" data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
+  <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')"><span class="mi">🌀</span><span class="ml" data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
+  <button class="module-btn" data-m="tool" onclick="setModule('tool')"><span class="mi">🧹</span><span class="ml" data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
+  <button class="module-btn" data-m="equipment" onclick="setModule('equipment')"><span class="mi">🧰</span><span class="ml" data-zh="設備" data-en="Equipment">設備</span></button>
+</nav>
+
 <div class="topnav">
-  <div class="module-bar" id="moduleBar">
-    <button class="module-btn active" data-m="cleaning" onclick="setModule('cleaning')"><span class="mi">🧴</span> <span data-zh="清潔劑" data-en="Chemicals">清潔劑</span></button>
-    <button class="module-btn" data-m="vacuum" onclick="setModule('vacuum')"><span class="mi">🌀</span> <span data-zh="吸塵機" data-en="Vacuums">吸塵機</span></button>
-    <button class="module-btn" data-m="tool" onclick="setModule('tool')"><span class="mi">🧹</span> <span data-zh="清潔工具" data-en="Tools">清潔工具</span></button>
-    <button class="module-btn" data-m="equipment" onclick="setModule('equipment')"><span class="mi">🧰</span> <span data-zh="設備" data-en="Equipment">設備</span></button>
-    <button class="icon-btn" id="searchToggle" onclick="toggleSearch()" title="搜尋">🔍</button>
+  <div class="search-row show" id="searchRow">
+    <div class="search-field">
+      <span class="search-ico">🔍</span>
+      <input id="searchInput" type="search" enterkeyhint="search" autocomplete="off" oninput="onSearch(this.value)" data-zh-placeholder="搜尋名稱、型號、樓層、編號…" data-en-placeholder="Search name, model, floor, S/N…" placeholder="搜尋名稱、型號、樓層、編號…">
+      <button class="search-close" id="searchClear" onclick="clearSearch()" aria-label="清除">✕</button>
+    </div>
   </div>
   <div class="filter-bar" id="filterBar"></div>
-  <div class="search-row" id="searchRow">
-    <input id="searchInput" type="search" autocomplete="off" oninput="onSearch(this.value)" data-zh-placeholder="搜尋…" data-en-placeholder="Search…" placeholder="搜尋…">
-    <button class="search-close" onclick="toggleSearch()">✕</button>
-  </div>
 </div>
 
 <div class="container" id="container">
@@ -708,9 +830,41 @@ var MODULE_ADD_LABEL = {
 // ============================================================================
 //  Load
 // ============================================================================
+// Photos are stored inline (base64) and make up ~99% of the payload, so the
+// four photo tables are fetched WITHOUT the image column; photos are then
+// fetched lazily, only for cards that scroll into view (see hydrateImages).
+var IMG_TABLE_ICON = { products: "🧴", vacuums: "🌀", tools: "🧹", equipment: "🧰" };
+async function selectNoImage(table, orders) {
+  var probe = await sb.from(table).select("*").limit(1);
+  var q;
+  if (!probe.error && probe.data && probe.data.length && "image" in probe.data[0]) {
+    var cols = Object.keys(probe.data[0]).filter(function (k) { return k !== "image"; }).join(",");
+    q = sb.from(table).select(cols);
+  } else {
+    q = sb.from(table).select("*");
+  }
+  orders.forEach(function (o) { q = q.order(o[0], o[1] || {}); });
+  var res = await q;
+  if (!res.error && res.data) res.data.forEach(function (r) { if (!("image" in r)) r._imgLazy = true; });
+  return res;
+}
 async function loadAll() {
-  var cats = await sb.from("categories").select("*").order("sort_order");
-  var prods = await sb.from("products").select("*").order("sort_order");
+  var asc = { ascending: true }, desc = { ascending: false };
+  var r = await Promise.all([
+    sb.from("categories").select("*").order("sort_order"),
+    selectNoImage("products", [["sort_order"]]),
+    selectNoImage("vacuums", [["floor_code"], ["model"]]),
+    sb.from("vacuum_maintenance").select("*").order("service_date", desc),
+    selectNoImage("tools", [["sort_order"]]),
+    sb.from("tool_categories").select("*").order("sort_order"),
+    sb.from("equipment_types").select("*").order("sort_order"),
+    sb.from("vacuum_floors").select("*").order("sort_order"),
+    selectNoImage("equipment", [["type"], ["model"]]),
+    sb.from("equipment_maintenance").select("*").order("service_date", desc),
+    sb.from("product_batches").select("*").order("expiry_date", asc),
+    sb.from("stock_movements").select("*").eq("kind", "out").order("happened_on", desc)
+  ]);
+  var cats = r[0], prods = r[1];
   if (cats.error || prods.error) {
     document.getElementById("container").innerHTML =
       '<div class="loading-hint">' +
@@ -719,32 +873,80 @@ async function loadAll() {
     console.error(cats.error || prods.error);
     return;
   }
+  function ok(x) { return x.error ? [] : (x.data || []); }
   categories = cats.data || [];
   products = prods.data || [];
-  // new modules — resilient: if their tables don't exist yet, treat as empty
-  var v = await sb.from("vacuums").select("*").order("floor_code").order("model");
-  vacuums = v.error ? [] : (v.data || []);
-  var m = await sb.from("vacuum_maintenance").select("*").order("service_date", { ascending: false });
-  vacMaint = m.error ? [] : (m.data || []);
-  var t = await sb.from("tools").select("*").order("sort_order");
-  tools = t.error ? [] : (t.data || []);
-  var tc = await sb.from("tool_categories").select("*").order("sort_order");
-  toolCategories = tc.error ? [] : (tc.data || []);
-  var et = await sb.from("equipment_types").select("*").order("sort_order");
-  equipTypesList = et.error ? [] : (et.data || []);
-  var vf = await sb.from("vacuum_floors").select("*").order("sort_order");
-  vacuumFloors = vf.error ? [] : (vf.data || []);
-  var e = await sb.from("equipment").select("*").order("type").order("model");
-  equipment = e.error ? [] : (e.data || []);
-  var em = await sb.from("equipment_maintenance").select("*").order("service_date", { ascending: false });
-  equipMaint = em.error ? [] : (em.data || []);
-  // batch / expiry + usage ledger (cleaning only) — resilient if tables absent
-  var bt = await sb.from("product_batches").select("*").order("expiry_date", { ascending: true });
-  batches = bt.error ? [] : (bt.data || []);
-  var mv = await sb.from("stock_movements").select("*").eq("kind", "out").order("happened_on", { ascending: false });
-  movements = mv.error ? [] : (mv.data || []);
+  // newer modules — resilient: if their tables don't exist yet, treat as empty
+  vacuums = ok(r[2]); vacMaint = ok(r[3]); tools = ok(r[4]); toolCategories = ok(r[5]);
+  equipTypesList = ok(r[6]); vacuumFloors = ok(r[7]); equipment = ok(r[8]); equipMaint = ok(r[9]);
+  batches = ok(r[10]); movements = ok(r[11]);
   render();
 }
+
+// ---- lazy photos ----
+function tableRows(t) { return t === "products" ? products : t === "vacuums" ? vacuums : t === "tools" ? tools : equipment; }
+function cardImg(table, row, alt) {
+  if (row.image) return '<img src="' + esc(row.image) + '" alt="' + esc(alt || "") + '" loading="lazy">';
+  if (row._imgLazy) return '<span class="no-img lazy-img" data-t="' + table + '" data-id="' + row.id + '">' + IMG_TABLE_ICON[table] + "</span>";
+  return '<span class="no-img">' + IMG_TABLE_ICON[table] + "</span>";
+}
+var imgObserver = null, imgQueue = {}, imgTimer = null;
+function hydrateImages() {
+  var els = document.querySelectorAll(".lazy-img");
+  if (!els.length) return;
+  if (!("IntersectionObserver" in window)) { els.forEach(queueImg); return; }
+  if (!imgObserver) imgObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { imgObserver.unobserve(en.target); queueImg(en.target); } });
+  }, { rootMargin: "400px 0px" });
+  els.forEach(function (el) { imgObserver.observe(el); });
+}
+function queueImg(el) {
+  var t = el.getAttribute("data-t"), id = +el.getAttribute("data-id");
+  (imgQueue[t] = imgQueue[t] || {})[id] = 1;
+  clearTimeout(imgTimer); imgTimer = setTimeout(flushImgQueue, 40);
+}
+async function fetchImages(t, ids) {
+  var res = await sb.from(t).select("id,image").in("id", ids);
+  if (res.error) throw res.error;
+  var got = {};
+  (res.data || []).forEach(function (x) { got[x.id] = x.image || null; });
+  tableRows(t).forEach(function (row) { if (ids.indexOf(row.id) >= 0 && row.id in got) { row.image = got[row.id]; row._imgLazy = false; } });
+  return got;
+}
+function flushImgQueue() {
+  var q = imgQueue; imgQueue = {};
+  Object.keys(q).forEach(function (t) {
+    var ids = Object.keys(q[t]).map(Number);
+    for (var k = 0; k < ids.length; k += 12) (function (chunk) {
+      fetchImages(t, chunk).then(function (got) {
+        chunk.forEach(function (id) {
+          document.querySelectorAll('.lazy-img[data-t="' + t + '"][data-id="' + id + '"]').forEach(function (el) {
+            if (got[id]) { var im = document.createElement("img"); im.src = got[id]; el.replaceWith(im); }
+            else el.classList.remove("lazy-img");
+          });
+        });
+      }).catch(function (e) { console.error(e); });
+    })(ids.slice(k, k + 12));
+  });
+}
+// Edit forms send the photo back on save, so make sure it's loaded first —
+// otherwise saving an item whose photo hasn't loaded yet would erase it.
+async function ensureImage(t, id) {
+  var row = tableRows(t).find(function (x) { return x.id === id; });
+  if (!row || !row._imgLazy) return true;
+  try { await fetchImages(t, [id]); return !row._imgLazy; } catch (e) { return false; }
+}
+function guardForm(name, t) {
+  var orig = window[name];
+  window[name] = async function (id) {
+    if (id != null && !(await ensureImage(t, id))) {
+      alert(currentLang === "zh" ? "相片載入失敗，請稍後再試" : "Couldn't load the photo, please try again");
+      return;
+    }
+    return orig.apply(this, arguments);
+  };
+}
+
 function batchesOf(productId) {
   return batches.filter(function (b) { return b.product_id === productId; })
     .sort(function (a, b) {
@@ -827,15 +1029,15 @@ function clearFormImage(prefix) {
 }
 
 // ---- search (magnifier toggles a compact input) ----
-var searchOpen = false;
-function toggleSearch() {
-  searchOpen = !searchOpen;
-  document.getElementById("searchRow").classList.toggle("show", searchOpen);
-  document.getElementById("filterBar").style.display = searchOpen ? "none" : "flex";
-  if (searchOpen) { var si = document.getElementById("searchInput"); si.value = ""; searchQuery = ""; setTimeout(function () { si.focus(); }, 40); }
-  else { searchQuery = ""; document.getElementById("searchInput").value = ""; render(); }
+function onSearch(q) {
+  searchQuery = (q || "").trim().toLowerCase();
+  document.getElementById("searchRow").classList.toggle("has-q", !!searchQuery);
+  render();
 }
-function onSearch(q) { if (!searchOpen) return; searchQuery = (q || "").trim().toLowerCase(); render(); }
+function clearSearch() {
+  var si = document.getElementById("searchInput"); si.value = "";
+  onSearch(""); si.blur();
+}
 function matchQuery(fields) {
   if (!searchQuery) return true;
   return fields.some(function (f) { return f && String(f).toLowerCase().indexOf(searchQuery) >= 0; });
@@ -843,7 +1045,11 @@ function matchQuery(fields) {
 function noResult() { return emptyState("🔍", "找不到符合的項目", "No matching items"); }
 
 // ---- filter chips (sticky, per module) ----
-function setFilter(key) { moduleFilter[currentModule] = key; render(); }
+function setFilter(key) {
+  moduleFilter[currentModule] = key; render();
+  var t = document.querySelector(".topnav"); if (t && window.scrollY > t.offsetTop) window.scrollTo(0, t.offsetTop);
+  var on = document.querySelector("#filterBar .chip.on"); if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center" });
+}
 function chipHtml(key, label, count, cls) {
   var on = moduleFilter[currentModule] === key;
   var safe = String(key).replace(/'/g, "\\'");
@@ -860,7 +1066,8 @@ function toolCatCmp(a, b) { return (toolCatRank(a) - toolCatRank(b)) || natCmp(a
 function eqTypeNames() { return equipTypesList.length ? equipTypesList.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
 function eqTypeCmp(a, b) { var arr = eqTypeNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
 function vacFloorNames() { return vacuumFloors.length ? vacuumFloors.slice().sort(function (a, b) { return a.sort_order - b.sort_order; }).map(function (c) { return c.name; }) : []; }
-function vacFloorCmp(a, b) { var arr = vacFloorNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
+function floorNum(k) { var mm = String(k || "").match(/^(\d+)\s*F$/i); return mm ? +mm[1] : null; }
+function vacFloorCmp(a, b) { var na = floorNum(a), nb = floorNum(b); if (na != null || nb != null) return na == null ? 1 : nb == null ? -1 : na - nb; var arr = vacFloorNames(); var ia = arr.indexOf(a), ib = arr.indexOf(b); return ((ia < 0 ? 998 : ia) - (ib < 0 ? 998 : ib)) || natCmp(a, b); }
 function buildFilterChips() {
   var m = currentModule, h = "";
   if (m === "cleaning") {
@@ -936,13 +1143,15 @@ function render() {
   else html = renderEquipment();
   document.getElementById("container").innerHTML = html;
   applyLang();
+  hydrateImages();
 }
 function setModule(m) {
   currentModule = m;
   searchQuery = "";
   var si = document.getElementById("searchInput"); if (si) si.value = "";
-  if (searchOpen) { searchOpen = false; document.getElementById("searchRow").classList.remove("show"); document.getElementById("filterBar").style.display = "flex"; }
+  document.getElementById("searchRow").classList.remove("has-q");
   render();
+  window.scrollTo(0, 0);
 }
 function setTabBadge(module, n) {
   var btn = document.querySelector('.module-btn[data-m="' + module + '"]');
@@ -1002,12 +1211,14 @@ function renderCleaning() {
   var cap = '<div class="mod-caption">' + (currentLang === "zh"
     ? "清潔劑 共 <b>" + products.length + "</b> 款　·　啟用 <b>" + actN + "</b>　·　<span class=\"off\">停用 " + offN + "</span>"
     : "<b>" + products.length + "</b> chemicals · <b>" + actN + "</b> active · <span class=\"off\">" + offN + " off</span>") + "</div>";
-  if (lowIds.length) cap += '<div class="alert-expiry" style="background:var(--danger-bg);border-color:#f0b3ad;color:#a8362c" onclick="setFilter(\'low\')"><span class="ic">🛒</span><span>' +
-    (currentLang === "zh" ? "有 <b>" + lowIds.length + "</b> 款清潔劑低於最低庫存，需補貨" : "<b>" + lowIds.length + "</b> chemicals below reorder level") +
-    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
-  if (exIds.length) cap += '<div class="alert-expiry" onclick="setFilter(\'expiring\')"><span class="ic">⚠️</span><span>' +
-    (currentLang === "zh" ? "有 <b>" + exIds.length + "</b> 款清潔劑即將到期或已過期（1 個月內）" : "<b>" + exIds.length + "</b> chemicals expiring or expired (≤30d)") +
-    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
+  if (lowIds.length || exIds.length) {
+    cap += '<div class="alert-row">';
+    if (lowIds.length) cap += '<button class="alert-pill danger" onclick="setFilter(\'low\')">🛒 ' +
+      (currentLang === "zh" ? "<b>" + lowIds.length + "</b> 款需補貨" : "<b>" + lowIds.length + "</b> to restock") + ' <span class="go">›</span></button>';
+    if (exIds.length) cap += '<button class="alert-pill warn" onclick="setFilter(\'expiring\')">⚠️ ' +
+      (currentLang === "zh" ? "<b>" + exIds.length + "</b> 款 1 個月內到期" : "<b>" + exIds.length + "</b> expiring ≤30d") + ' <span class="go">›</span></button>';
+    cap += "</div>";
+  }
   if (f === "disabled") {
     var dis = products.filter(function (p) { return p.status === "停用"; });
     return cap + (dis.length ? '<div class="products-grid">' + dis.map(cleaningCard).join("") + "</div>" : emptyState("🚫", "沒有停用產品", "No disabled products"));
@@ -1035,7 +1246,7 @@ function cleaningCard(p) {
   var stockLbl = below ? (currentLang === "zh" ? "需補貨" : "Restock") : (currentLang === "zh" ? "庫存" : "Stock");
   var disabled = p.status === "停用";
   var rinseYes = p.rinse_zh === "需要";
-  var img = p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.alt || p.name_zh) + '" loading="lazy">' : '<span class="no-img">🧴</span>';
+  var img = cardImg("products", p, p.alt || p.name_zh);
   var admin = isAdmin ? (
     '<div class="stock-edit" style="display:flex;gap:6px">' +
       '<button class="mini-btn" onclick="openReceive(' + p.id + ')" data-zh="＋ 進貨" data-en="+ Receive">＋ 進貨</button>' +
@@ -1442,7 +1653,7 @@ function renderVacuum() {
   return html;
 }
 function vacCard(v) {
-  var img = v.image ? '<img src="' + esc(v.image) + '">' : '<span class="no-img">🌀</span>';
+  var img = cardImg("vacuums", v);
   var st = v.status;
   var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
   var records = vacMaint.filter(function (m) { return m.vacuum_id === v.id; });
@@ -1473,7 +1684,7 @@ function vacCard(v) {
           '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
         "</div></div>" +
       (v.notes ? '<div class="vac-notes">' + esc(v.notes) + "</div>" : "") +
-      '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+      maintBox(records.length, maintList) +
       admin +
     "</div></div>";
 }
@@ -1601,9 +1812,8 @@ function renderTool() {
   var cap = '<div class="mod-caption">' + (currentLang === "zh"
     ? "清潔工具 共 <b>" + tools.length + "</b> 款　·　啟用 <b>" + actN + "</b>　·　<span class=\"off\">停用 " + offN + "</span>"
     : "<b>" + tools.length + "</b> tools · <b>" + actN + "</b> active · <span class=\"off\">" + offN + " off</span>") + "</div>";
-  if (lowIds.length) cap += '<div class="alert-expiry" style="background:var(--danger-bg);border-color:#f0b3ad;color:#a8362c" onclick="setFilter(\'low\')"><span class="ic">🛒</span><span>' +
-    (currentLang === "zh" ? "有 <b>" + lowIds.length + "</b> 樣工具低於最低庫存，需補貨" : "<b>" + lowIds.length + "</b> tools below reorder level") +
-    '</span><span class="go">' + (currentLang === "zh" ? "點此查看 →" : "view →") + "</span></div>";
+  if (lowIds.length) cap += '<div class="alert-row"><button class="alert-pill danger" onclick="setFilter(\'low\')">🛒 ' +
+    (currentLang === "zh" ? "<b>" + lowIds.length + "</b> 樣工具需補貨" : "<b>" + lowIds.length + "</b> tools to restock") + ' <span class="go">›</span></button></div>';
 
   if (f === "disabled") {
     var dis = tools.filter(function (t) { return t.status === "停用"; });
@@ -1629,7 +1839,7 @@ function toolCard(t) {
   var minS = Number(t.min_stock) || 0, below = minS > 0 && s < minS;
   var stockClass = below ? "stock-out" : s > 5 ? "stock-ok" : s > 0 ? "stock-low" : "stock-out";
   var disabled = t.status === "停用";
-  var img = t.image ? '<img src="' + esc(t.image) + '" loading="lazy">' : '<span class="no-img">🧹</span>';
+  var img = cardImg("tools", t);
   var meta = '<div class="tool-meta"><span>' + (currentLang === "zh" ? "在用 " : "in use ") + inUse + "</span>" +
     "<span>" + (currentLang === "zh" ? "總 " : "total ") + total + "</span>" +
     (minS > 0 ? '<span class="' + (below ? "low" : "") + '">' + (currentLang === "zh" ? "最低 " : "min ") + minS + "</span>" : "") + "</div>";
@@ -1853,7 +2063,7 @@ function renderEquipment() {
   return html || emptyState("🧰", "尚無正常設備", "None");
 }
 function equipCard(e) {
-  var img = e.image ? '<img src="' + esc(e.image) + '">' : '<span class="no-img">🧰</span>';
+  var img = cardImg("equipment", e);
   var st = e.status;
   var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
   var records = equipMaint.filter(function (m) { return m.equipment_id === e.id; });
@@ -1888,9 +2098,20 @@ function equipCard(e) {
         "</div></div>" +
       accessorySummary(e) +
       (e.notes ? '<div class="vac-notes">' + esc(e.notes) + "</div>" : "") +
-      '<div class="maint-box"><div class="maint-title" data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</div>' + maintList + "</div>" +
+      maintBox(records.length, maintList) +
       admin +
     "</div></div>";
+}
+function maintBox(n, listHtml) {
+  var more = n > 1;
+  return '<div class="maint-box' + (more ? " collapsed" : "") + '"><div class="maint-title"><span data-zh="🛠 保養記錄" data-en="🛠 Maintenance">🛠 保養記錄</span>' +
+    (n ? ' <span class="maint-n">' + n + "</span>" : "") + "</div>" + listHtml +
+    (more ? '<button class="maint-more" onclick="toggleMaint(this,' + n + ')">' + (currentLang === "zh" ? "查看全部 " + n + " 條 ▾" : "Show all " + n + " ▾") + "</button>" : "") +
+    "</div>";
+}
+function toggleMaint(btn, n) {
+  var box = btn.parentNode; var c = box.classList.toggle("collapsed");
+  btn.textContent = c ? (currentLang === "zh" ? "查看全部 " + n + " 條 ▾" : "Show all " + n + " ▾") : (currentLang === "zh" ? "收起 ▴" : "Collapse ▴");
 }
 function accessorySummary(e) {
   var a = e.accessories;
@@ -2097,6 +2318,10 @@ document.addEventListener("click", function (e) {
   if (img && img.src) { e.stopPropagation(); openLightbox(img.src); }
 });
 
+guardForm("openProductForm", "products");
+guardForm("openVacuumForm", "vacuums");
+guardForm("openToolForm", "tools");
+guardForm("openEquipmentForm", "equipment");
 window.onload = loadAll;
 </script>
 </body>
