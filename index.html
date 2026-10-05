@@ -441,6 +441,10 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 .alert-pill .go { margin-left:auto; font-size:18px; line-height:1; opacity:.7; }
 .alert-pill.danger { background:var(--danger-bg); border-color:#f0b3ad; color:#a8362c; }
 .alert-pill.warn { background:var(--warn-bg); border-color:#f2c68a; color:#9a5410; }
+/* version stamp (= GitHub Pages deploy time, read from Last-Modified) */
+.app-ver { font-size:11px; opacity:.55; margin-top:4px; letter-spacing:.3px; font-variant-numeric:tabular-nums; }
+.set-ver { margin-top:6px; padding:9px 12px 2px; border-top:1px solid var(--line-2); font-size:12px; color:var(--ink-3); font-weight:600; font-variant-numeric:tabular-nums; }
+@media (max-width:700px) { .app-ver { margin-top:1px; font-size:10.5px; } }
 </style>
 </head>
 <body>
@@ -448,6 +452,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 <div class="page-header">
   <h1 data-zh="酒店後勤系統" data-en="Hotel Back-of-House">酒店後勤系統</h1>
   <div class="sub" id="headerSub" data-zh="物料與設備管理" data-en="Supplies & Equipment">物料與設備管理</div>
+  <div class="app-ver" id="appVer"></div>
   <div class="settings">
     <button class="gear-btn" onclick="toggleSettings(event)" title="設定">⚙</button>
     <div class="settings-menu" id="settingsMenu">
@@ -458,6 +463,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
       </div>
       <button class="set-item" id="setAdminBtn" onclick="toggleAdmin()">🔒 登入</button>
       <button class="set-item" id="setCatBtn" onclick="openCatManagerForModule()" style="display:none">⚙ 管理分類</button>
+      <div class="set-ver" id="setVer"></div>
     </div>
   </div>
 </div>
@@ -2322,6 +2328,19 @@ guardForm("openProductForm", "products");
 guardForm("openVacuumForm", "vacuums");
 guardForm("openToolForm", "tools");
 guardForm("openEquipmentForm", "equipment");
+// Version label: GitHub Pages sends Last-Modified = deploy time of this file,
+// so every push shows its own date/time automatically (no manual bump needed).
+function showVersion() {
+  var d = new Date(document.lastModified);
+  if (isNaN(d)) return;
+  function z(n) { return (n < 10 ? "0" : "") + n; }
+  var t = d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + " " + z(d.getHours()) + ":" + z(d.getMinutes());
+  document.getElementById("appVer").textContent = (currentLang === "zh" ? "版本 " : "Version ") + t;
+  document.getElementById("setVer").textContent = (currentLang === "zh" ? "版本：" : "Version: ") + t;
+}
+var _applyLang = applyLang;
+applyLang = function () { _applyLang(); showVersion(); };
+showVersion();
 window.onload = loadAll;
 </script>
 </body>
