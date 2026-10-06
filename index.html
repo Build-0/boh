@@ -472,6 +472,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
   .chip { padding:7px 11px; font-size:13.5px; gap:4px; }
   .chip .c-n { padding:0 5px; }
 }
+.vs-lost { background:#efe9fb; color:#6b46c1; }
 </style>
 </head>
 <body>
@@ -603,6 +604,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
           <option value="正常" data-zh="正常" data-en="OK">正常</option>
           <option value="維修中" data-zh="維修中" data-en="Repairing">維修中</option>
           <option value="報廢" data-zh="報廢" data-en="Scrapped">報廢</option>
+          <option value="遺失" data-zh="遺失／未找到" data-en="Missing">遺失／未找到</option>
         </select>
       </div>
     </div>
@@ -709,6 +711,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
         <option value="正常" data-zh="正常" data-en="OK">正常</option>
         <option value="維修中" data-zh="維修中" data-en="Repairing">維修中</option>
         <option value="報廢" data-zh="報廢" data-en="Scrapped">報廢</option>
+        <option value="遺失" data-zh="遺失／未找到" data-en="Missing">遺失／未找到</option>
       </select>
     </div>
 
@@ -1003,8 +1006,30 @@ function toggleText(status, lang) {
   return status === "停用" ? (lang === "zh" ? "▶ 啟用" : "▶ Enable") : (lang === "zh" ? "■ 停用" : "■ Disable");
 }
 function vacStatusText(st, lang) {
-  if (lang === "en") return st === "維修中" ? "Repairing" : st === "報廢" ? "Scrapped" : "OK";
-  return st;
+  if (lang === "en") return st === "維修中" ? "Repairing" : st === "報廢" ? "Scrapped" : st === "遺失" ? "Missing" : "OK";
+  return st === "遺失" ? "遺失／未找到" : st;
+}
+// Display dictionary: locations, equipment types and tool categories are
+// stored in one language only; show each in the language of the interface.
+var VOCAB = [
+  ["倉庫", "Warehouse"], ["化學品房", "Chemical Room"], ["器材房", "Equipment Room"], ["制服房", "Uniform Room"],
+  ["1F 行李房旁茶水間", "Near 1F Luggage Room Pantry"], ["1F 商場 Stanley Café 旁茶水間", "1F Mall Ｎear Stanley café Pantry"],
+  ["辦公室", "Office"], ["乾淨布草房", "Clean Linen Room"], ["洗衣房", "Laundry"], ["前臺（新增）", "Front Desk (new)"],
+  ["未知", "Unknown"], ["8F消防梯", "8F Fire Stairs"], ["財務部（上次保養地點）", "Finance Dept (last serviced)"],
+  ["工程部（上次檢查地點）", "Engineering Dept (last checked)"],
+  ["冰箱", "Fridge"], ["加濕機", "Humidifier"], ["嬰兒奶瓶消毒器", "Baby Bottle Sterilizer"], ["抽濕機", "Dehumidifier"],
+  ["暖奶器", "Bottle Warmer"], ["燙斗", "Iron"], ["空氣清新機", "Air Purifier"], ["臭氧機", "Ozone Machine"],
+  ["垃圾桶", "Bins"], ["防滑牌", "Wet Floor Signs"], ["洗手液器", "Soap Dispensers"], ["拖把及拖桶", "Mops & Buckets"],
+  ["掃把及地刷", "Brooms & Brushes"], ["玻璃及高空", "Glass & High Dusting"], ["百潔墊", "Scouring Pads"],
+  ["其他", "Other"], ["保養/清潔", "Service / Cleaning"], ["維修", "Repair"], ["無編號", "No ID"]
+];
+var VOCAB_ZH = {}, VOCAB_EN = {};
+VOCAB.forEach(function (p) { VOCAB_ZH[p[1].toLowerCase()] = p[0]; VOCAB_ZH[p[0]] = p[0]; VOCAB_EN[p[0]] = p[1]; VOCAB_EN[p[1].toLowerCase()] = p[1]; });
+function tr(s) {
+  if (s == null) return s;
+  var k = String(s).trim();
+  if (currentLang === "zh") return VOCAB_ZH[k] || VOCAB_ZH[k.toLowerCase()] || s;
+  return VOCAB_EN[k] || VOCAB_EN[k.toLowerCase()] || s;
 }
 function emptyState(ico, zh, en) {
   return '<div class="empty-state"><span class="ico">' + ico + '</span><div data-zh="' + esc(zh) + '" data-en="' + esc(en) + '">' + esc(zh) + "</div></div>";
@@ -1111,9 +1136,9 @@ function selectChip(prefix, label, opts) {
   var h = '<label class="chip sel-chip' + (on ? " on" : "") + '"><span>' + esc(curOpt ? curOpt.label : label) +
     (curOpt ? ' <span class="c-n">' + curOpt.n + "</span>" : "") + ' ▾</span>' +
     '<select onchange="setFilter(this.value)" aria-label="' + esc(label) + '">' +
-    '<option value="all"' + (on ? "" : " selected") + ">" + esc(label) + "：" + (currentLang === "zh" ? "全部" : "All") + "</option>";
+    '<option value="all"' + (on ? "" : " selected") + ">" + esc(label) + (currentLang === "zh" ? "：全部" : ": All") + "</option>";
   opts.forEach(function (o) {
-    h += '<option value="' + esc(prefix + o.key) + '"' + (curOpt === o ? " selected" : "") + ">" + esc(o.label) + "（" + o.n + "）</option>";
+    h += '<option value="' + esc(prefix + o.key) + '"' + (curOpt === o ? " selected" : "") + ">" + esc(o.label) + (currentLang === "zh" ? "（" + o.n + "）" : " (" + o.n + ")") + "</option>";
   });
   return h + "</select></label>";
 }
@@ -1133,29 +1158,33 @@ function buildFilterChips() {
     h += chipHtml("report", zh ? "📊 報表" : "📊 Report", null, "report");
     if (dis) h += chipHtml("disabled", zh ? "停用" : "Disabled", dis, "danger");
   } else if (m === "vacuum") {
-    var vn = vacuums.filter(function (v) { return v.status !== "報廢"; });
+    var vn = vacuums.filter(function (v) { return v.status !== "報廢" && v.status !== "遺失"; });
+    var vl = vacuums.filter(function (v) { return v.status === "遺失"; }).length;
     var vr = vacuums.filter(function (v) { return v.status === "維修中"; }).length;
     var vs = vacuums.filter(function (v) { return v.status === "報廢"; }).length;
     h += chipHtml("all", zh ? "全部" : "All", vn.length);
     var fl = {}; vn.forEach(function (v) { fl[floorKey(v.floor_code)] = (fl[floorKey(v.floor_code)] || 0) + 1; });
-    h += selectChip("floor-", zh ? "📍 位置" : "📍 Floor", Object.keys(fl).sort(vacFloorCmp).map(function (f) { return { key: f, label: f, n: fl[f] }; }));
+    h += selectChip("floor-", zh ? "📍 位置" : "📍 Floor", Object.keys(fl).sort(vacFloorCmp).map(function (f) { return { key: f, label: tr(f), n: fl[f] }; }));
     if (vr) h += chipHtml("repair", zh ? "🔧 維修中" : "🔧 Repair", vr, "warn");
+    if (vl) h += chipHtml("lost", zh ? "❓ 遺失" : "❓ Missing", vl, "danger");
     if (vs) h += chipHtml("scrap", zh ? "⚫ 報廢" : "⚫ Scrapped", vs, "danger");
   } else if (m === "equipment") {
-    var en = equipment.filter(function (e) { return e.status !== "報廢"; });
+    var en = equipment.filter(function (e) { return e.status !== "報廢" && e.status !== "遺失"; });
+    var el = equipment.filter(function (e) { return e.status === "遺失"; }).length;
     var er = equipment.filter(function (e) { return e.status === "維修中"; }).length;
     var es = equipment.filter(function (e) { return e.status === "報廢"; }).length;
     h += chipHtml("all", zh ? "全部" : "All", en.length);
     var ty = {}; en.forEach(function (e) { var t = e.type || "其他"; ty[t] = (ty[t] || 0) + 1; });
-    h += selectChip("type-", zh ? "類型" : "Type", Object.keys(ty).sort(eqTypeCmp).map(function (t) { return { key: t, label: t, n: ty[t] }; }));
+    h += selectChip("type-", zh ? "類型" : "Type", Object.keys(ty).sort(eqTypeCmp).map(function (t) { return { key: t, label: tr(t), n: ty[t] }; }));
     if (er) h += chipHtml("repair", zh ? "🔧 維修中" : "🔧 Repair", er, "warn");
+    if (el) h += chipHtml("lost", zh ? "❓ 遺失" : "❓ Missing", el, "danger");
     if (es) h += chipHtml("scrap", zh ? "⚫ 報廢" : "⚫ Scrapped", es, "danger");
   } else if (m === "tool") {
     var ta = tools.filter(function (t) { return t.status !== "停用"; });
     var tdd = tools.length - ta.length;
     h += chipHtml("all", zh ? "全部" : "All", ta.length);
     var tcat = {}; ta.forEach(function (t) { var c = t.category || "其他"; tcat[c] = (tcat[c] || 0) + 1; });
-    h += selectChip("cat-", zh ? "分類" : "Category", Object.keys(tcat).sort(toolCatCmp).map(function (c) { return { key: c, label: c, n: tcat[c] }; }));
+    h += selectChip("cat-", zh ? "分類" : "Category", Object.keys(tcat).sort(toolCatCmp).map(function (c) { return { key: c, label: tr(c), n: tcat[c] }; }));
     var tlow = lowToolIds().length;
     if (tlow) h += chipHtml("low", zh ? "🛒 補貨" : "🛒 Restock", tlow, "danger");
     if (tdd) h += chipHtml("disabled", zh ? "停用" : "Disabled", tdd, "danger");
@@ -1666,12 +1695,16 @@ function renderVacuum() {
   if (!vacuums.length) return emptyState("🌀", "尚無吸塵機，登入後可新增", "No vacuums yet");
   var f = moduleFilter.vacuum;
   if (searchQuery) {
-    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, v.label, v.serial]); });
+    var hits = vacuums.filter(function (v) { return matchQuery([v.model, v.brand, v.floor_code, tr(v.floor_code), v.label, v.serial]); });
     return hits.length ? '<div class="vac-grid" style="margin-top:14px">' + hits.map(vacCard).join("") + "</div>" : noResult();
   }
   if (f === "repair") {
     var rep = vacuums.filter(function (v) { return v.status === "維修中"; }).sort(byMaintDesc("vacuum_id", vacMaint));
     return brandLegend() + slimHead(currentLang === "zh" ? "🔧 維修中（近期保養在前）" : "🔧 Repair", rep.length, "repair") + '<div class="vac-grid">' + rep.map(vacCard).join("") + "</div>";
+  }
+  if (f === "lost") {
+    var lost = vacuums.filter(function (v) { return v.status === "遺失"; }).sort(byLabel);
+    return slimHead(currentLang === "zh" ? "❓ 遺失／未找到" : "❓ Missing", lost.length, "scrap") + '<div class="vac-grid">' + lost.map(vacCard).join("") + "</div>";
   }
   if (f === "scrap") {
     var scr = vacuums.filter(function (v) { return v.status === "報廢"; }).sort(byLabel);
@@ -1679,8 +1712,8 @@ function renderVacuum() {
   }
   if (f.indexOf("floor-") === 0) {
     var fl = f.slice(6);
-    var items = vacuums.filter(function (v) { return v.status !== "報廢" && floorKey(v.floor_code) === fl; }).sort(byLabel);
-    return brandLegend() + slimHead("🏢 " + esc(fl), items.length) + '<div class="vac-grid">' + items.map(vacCard).join("") + "</div>";
+    var items = vacuums.filter(function (v) { return v.status !== "報廢" && v.status !== "遺失" && floorKey(v.floor_code) === fl; }).sort(byLabel);
+    return brandLegend() + slimHead("🏢 " + esc(tr(fl)), items.length) + '<div class="vac-grid">' + items.map(vacCard).join("") + "</div>";
   }
   // all: 維修中 pinned first, then floor groups (正常); 報廢 excluded
   var html = brandLegend();
@@ -1690,18 +1723,18 @@ function renderVacuum() {
   vacuums.filter(function (v) { return v.status === "正常"; }).forEach(function (v) { var k = floorKey(v.floor_code); (groups[k] = groups[k] || []).push(v); });
   Object.keys(groups).sort(vacFloorCmp).forEach(function (k) {
     groups[k].sort(byLabel);
-    html += slimHead("🏢 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(vacCard).join("") + "</div>";
+    html += slimHead("🏢 " + esc(tr(k)), groups[k].length) + '<div class="vac-grid">' + groups[k].map(vacCard).join("") + "</div>";
   });
   return html;
 }
 function vacCard(v) {
   var img = cardImg("vacuums", v);
   var st = v.status;
-  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
+  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : st === "遺失" ? "vs-lost" : "vs-ok";
   var records = vacMaint.filter(function (m) { return m.vacuum_id === v.id; });
   var maintList = records.length
     ? records.map(function (m) {
-        return '<div class="maint-item"><span>' + esc(m.description) +
+        return '<div class="maint-item"><span>' + esc(tr(m.description)) +
           (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(\'vacuum\',' + m.id + ')">✕</button>' : "") +
           '</span><span class="maint-date">' + esc(m.service_date) + "</span></div>";
       }).join("")
@@ -1715,14 +1748,14 @@ function vacCard(v) {
     "</div>"
   ) : "";
   var sub = [v.label ? v.model : v.brand, v.serial ? "S/N " + v.serial : ""].filter(Boolean).join(" · ");
-  return '<div class="vac-card ' + brandClass(v.brand) + " " + (st === "報廢" ? "scrap" : "") + '">' +
+  return '<div class="vac-card ' + brandClass(v.brand) + " " + (st === "報廢" || st === "遺失" ? "scrap" : "") + '">' +
     '<div class="vac-img">' + img + "</div>" +
     '<div class="vac-body">' +
       '<div class="vac-head"><div class="vac-model">' + esc(v.label || v.model) + "</div>" +
         (sub ? '<div class="vac-brand">' + esc(sub) + "</div>" : "") +
         '<div class="vac-badges">' +
           brandTag(v.brand) +
-          (v.floor_code ? '<span class="floor-badge">' + esc(v.floor_code) + "</span>" : "") +
+          (v.floor_code ? '<span class="floor-badge">' + esc(tr(v.floor_code)) + "</span>" : "") +
           '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
         "</div></div>" +
       (v.notes ? '<div class="vac-notes">' + esc(v.notes) + "</div>" : "") +
@@ -1873,7 +1906,7 @@ function renderTool() {
   tools.filter(function (t) { return t.status !== "停用"; }).forEach(function (t) { var c = t.category || "其他"; (groups[c] = groups[c] || []).push(t); });
   var keys = Object.keys(groups).sort(toolCatCmp);
   var body = "";
-  keys.forEach(function (c) { body += slimHead("🧹 " + esc(c), groups[c].length) + toolGrid(groups[c]); });
+  keys.forEach(function (c) { body += slimHead("🧹 " + esc(tr(c)), groups[c].length) + toolGrid(groups[c]); });
   return cap + (body || emptyState("🧹", "尚無啟用工具", "No active tools"));
 }
 function toolCard(t) {
@@ -1904,7 +1937,7 @@ function toolCard(t) {
     '<div class="product-img">' + img + "</div>" +
     '<div class="product-info"><div class="info-top"><div>' +
       '<div class="product-name">' + esc(t.name) + "</div>" +
-      '<div class="product-name-sub">' + esc(t.category || "其他") + (t.notes ? " · " + esc(t.notes) : "") + "</div>" +
+      '<div class="product-name-sub">' + esc(tr(t.category || "其他")) + (t.notes ? " · " + esc(t.notes) : "") + "</div>" +
     "</div>" +
     '<div class="stock-area"><div class="stock-badge ' + stockClass + '">' + s + "</div>" +
     '<div class="stock-label"' + (below ? ' style="color:var(--danger);font-weight:800"' : "") + ">" + (below ? (currentLang === "zh" ? "需補貨" : "Restock") : (currentLang === "zh" ? "庫存" : "Stock")) + "</div></div></div>" +
@@ -2076,12 +2109,16 @@ function renderEquipment() {
   if (!equipment.length) return emptyState("🧰", "尚無設備，登入後可新增", "No equipment yet");
   var f = moduleFilter.equipment;
   if (searchQuery) {
-    var hits = equipment.filter(function (e) { return matchQuery([e.type, e.model, e.brand, e.floor_code, e.label, e.serial]); });
+    var hits = equipment.filter(function (e) { return matchQuery([e.type, VOCAB_EN[e.type], e.model, e.brand, e.floor_code, tr(e.floor_code), e.label, e.serial]); });
     return hits.length ? '<div class="vac-grid" style="margin-top:14px">' + hits.map(equipCard).join("") + "</div>" : noResult();
   }
   if (f === "repair") {
     var rep = equipment.filter(function (e) { return e.status === "維修中"; }).sort(byMaintDesc("equipment_id", equipMaint));
     return slimHead(currentLang === "zh" ? "🔧 維修中" : "🔧 Repair", rep.length, "repair") + '<div class="vac-grid">' + rep.map(equipCard).join("") + "</div>";
+  }
+  if (f === "lost") {
+    var lost = equipment.filter(function (e) { return e.status === "遺失"; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
+    return slimHead(currentLang === "zh" ? "❓ 遺失／未找到" : "❓ Missing", lost.length, "scrap") + '<div class="vac-grid">' + lost.map(equipCard).join("") + "</div>";
   }
   if (f === "scrap") {
     var scr = equipment.filter(function (e) { return e.status === "報廢"; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
@@ -2089,8 +2126,8 @@ function renderEquipment() {
   }
   if (f.indexOf("type-") === 0) {
     var ty = f.slice(5);
-    var items = equipment.filter(function (e) { return e.status !== "報廢" && (e.type || "其他") === ty; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
-    return slimHead("🧰 " + esc(ty), items.length) + '<div class="vac-grid">' + items.map(equipCard).join("") + "</div>";
+    var items = equipment.filter(function (e) { return e.status !== "報廢" && e.status !== "遺失" && (e.type || "其他") === ty; }).sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
+    return slimHead("🧰 " + esc(tr(ty)), items.length) + '<div class="vac-grid">' + items.map(equipCard).join("") + "</div>";
   }
   // all: 維修中 first, then type groups (正常). 報廢 excluded.
   var html = "";
@@ -2100,18 +2137,18 @@ function renderEquipment() {
   equipment.filter(function (e) { return e.status === "正常"; }).forEach(function (e) { var k = e.type || "其他"; (groups[k] = groups[k] || []).push(e); });
   Object.keys(groups).sort(eqTypeCmp).forEach(function (k) {
     groups[k].sort(function (a, b) { return natCmp(eqKey(a), eqKey(b)); });
-    html += slimHead("🧰 " + esc(k), groups[k].length) + '<div class="vac-grid">' + groups[k].map(equipCard).join("") + "</div>";
+    html += slimHead("🧰 " + esc(tr(k)), groups[k].length) + '<div class="vac-grid">' + groups[k].map(equipCard).join("") + "</div>";
   });
   return html || emptyState("🧰", "尚無正常設備", "None");
 }
 function equipCard(e) {
   var img = cardImg("equipment", e);
   var st = e.status;
-  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : "vs-ok";
+  var stCls = st === "維修中" ? "vs-repair" : st === "報廢" ? "vs-scrap" : st === "遺失" ? "vs-lost" : "vs-ok";
   var records = equipMaint.filter(function (m) { return m.equipment_id === e.id; });
   var maintList = records.length
     ? records.map(function (m) {
-        return '<div class="maint-item"><span>' + esc(m.description) +
+        return '<div class="maint-item"><span>' + esc(tr(m.description)) +
           (isAdmin ? ' <button class="maint-del" onclick="deleteMaint(\'equipment\',' + m.id + ')">✕</button>' : "") +
           '</span><span class="maint-date">' + esc(m.service_date) + "</span></div>";
       }).join("")
@@ -2135,17 +2172,19 @@ function equipCard(e) {
     if (!mnum && e.serial === e.label) e = Object.assign({}, e, { serial: null });
   } else if (currentLang === "zh" && e.type && e.label === "無編號") {
     titleLine = e.type + "（無編號）";
+  } else if (currentLang === "en" && e.type && e.label === "無編號") {
+    titleLine = tr(e.type) + " (No ID)";
   }
   if (e.serial && e.serial !== titleLine) subBits.push("S/N " + e.serial);
   if (e.model && e.model.trim() && e.model !== titleLine) subBits.push(e.model);
   else if (e.brand) subBits.push(e.brand);
-  return '<div class="vac-card ' + (st === "報廢" ? "scrap" : "") + '">' +
+  return '<div class="vac-card ' + (st === "報廢" || st === "遺失" ? "scrap" : "") + '">' +
     '<div class="vac-img">' + img + "</div>" +
     '<div class="vac-body">' +
       '<div class="vac-head"><div class="vac-model">' + esc(titleLine) + "</div>" +
         (subBits.length ? '<div class="vac-brand">' + esc(subBits.join(" · ")) + "</div>" : "") +
         '<div class="vac-badges">' +
-          (e.floor_code ? '<span class="floor-badge">' + esc(e.floor_code) + "</span>" : "") +
+          (e.floor_code ? '<span class="floor-badge">' + esc(tr(e.floor_code)) + "</span>" : "") +
           '<span class="vac-status ' + stCls + '">' + esc(vacStatusText(st, currentLang)) + "</span>" +
         "</div></div>" +
       accessorySummary(e) +
