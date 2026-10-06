@@ -2126,6 +2126,16 @@ function equipCard(e) {
   ) : "";
   var titleLine = e.label || (e.model && e.model.trim()) || e.serial || e.type;
   var subBits = [];
+  // Chinese UI: asset codes like "warmer01" / "iron12" read as English, so
+  // show the Chinese type + number as the title and keep the code underneath.
+  if (currentLang === "zh" && e.type && e.label && !/[\u4e00-\u9fff]/.test(e.label)) {
+    var mnum = String(e.label).match(/^[A-Za-z]+[-_ ]?(\d+)$/);
+    subBits.push("編號 " + e.label);
+    titleLine = e.type + (mnum ? " " + mnum[1] : "");
+    if (!mnum && e.serial === e.label) e = Object.assign({}, e, { serial: null });
+  } else if (currentLang === "zh" && e.type && e.label === "無編號") {
+    titleLine = e.type + "（無編號）";
+  }
   if (e.serial && e.serial !== titleLine) subBits.push("S/N " + e.serial);
   if (e.model && e.model.trim() && e.model !== titleLine) subBits.push(e.model);
   else if (e.brand) subBits.push(e.brand);
