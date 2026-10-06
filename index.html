@@ -473,6 +473,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
   .chip .c-n { padding:0 5px; }
 }
 .vs-lost { background:#efe9fb; color:#6b46c1; }
+.locked-input { background:var(--surface-3) !important; color:var(--ink-3); cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -568,7 +569,7 @@ button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
           <option value="yes" data-zh="需要" data-en="Required">需要</option>
         </select>
       </div>
-      <div><label data-zh="初始庫存" data-en="Stock">初始庫存</label><input type="number" id="pfStock" min="0" value="0"></div>
+      <div><label data-zh="庫存（只可用進貨／盤點更改）" data-en="Stock (change via Receive / Count)">庫存（只可用進貨／盤點更改）</label><input type="number" id="pfStock" min="0" value="0" readonly disabled class="locked-input"></div>
     </div>
     <div class="row2">
       <div><label data-zh="最低庫存（低於就提醒補貨，0=不提醒）" data-en="Min stock (alert below; 0=off)">最低庫存（低於就提醒補貨，0=不提醒）</label><input type="number" id="pfMin" min="0" value="0"></div>
@@ -920,6 +921,12 @@ async function loadAll() {
 }
 
 // ---- lazy photos ----
+async function reloadNoImage(t, orders) {
+  var keep = {}; tableRows(t).forEach(function (x) { if (x.image) keep[x.id] = x.image; });
+  var r = await selectNoImage(t, orders);
+  if (r.error) return null;
+  return (r.data || []).map(function (x) { if (keep[x.id]) { x.image = keep[x.id]; x._imgLazy = false; } return x; });
+}
 function tableRows(t) { return t === "products" ? products : t === "vacuums" ? vacuums : t === "tools" ? tools : equipment; }
 function cardImg(table, row, alt) {
   if (row.image) return '<img src="' + esc(row.image) + '" alt="' + esc(alt || "") + '" loading="lazy">';
@@ -1481,7 +1488,9 @@ async function saveProductForm() {
     rinse_en: rinseYes ? "Required" : "Not required",
     image: formImages.pf,
     alt: nameZh,
-    stock: document.getElementById("pfStock").value,
+    // Stock is changed only through 進貨 (receive) / 盤點 (count) so every
+    // change is recorded and the usage report stays complete.
+    stock: editProductId != null ? "" : "0",
     min_stock: document.getElementById("pfMin").value,
     status: "啟用",
     sort_order: editProductId || 999,
@@ -1502,7 +1511,7 @@ async function deleteProduct(id) {
 
 // ---- batches / expiry / stock count ----
 async function reloadCleaningData() {
-  var pr = await sb.from("products").select("*").order("sort_order"); if (!pr.error) products = pr.data || [];
+  var pr = await reloadNoImage("products", [["sort_order"]]); if (pr) products = pr;
   var bt = await sb.from("product_batches").select("*").order("expiry_date", { ascending: true }); if (!bt.error) batches = bt.data || [];
   var mv = await sb.from("stock_movements").select("*").eq("kind", "out").order("happened_on", { ascending: false }); if (!mv.error) movements = mv.data || [];
   render();
@@ -2086,16 +2095,16 @@ async function saveCatManager() {
     closeCatManager();
     if (catMgrMode === "cleaning") {
       var cc = await sb.from("categories").select("*").order("sort_order"); if (!cc.error) categories = cc.data || [];
-      var pr = await sb.from("products").select("*").order("sort_order"); if (!pr.error) products = pr.data || [];
+      var pr = await reloadNoImage("products", [["sort_order"]]); if (pr) products = pr;
     } else if (catMgrMode === "equipment") {
       var ec = await sb.from("equipment_types").select("*").order("sort_order"); if (!ec.error) equipTypesList = ec.data || [];
-      var eq = await sb.from("equipment").select("*").order("type").order("model"); if (!eq.error) equipment = eq.data || [];
+      var eq = await reloadNoImage("equipment", [["type"], ["model"]]); if (eq) equipment = eq;
     } else if (catMgrMode === "vacuum") {
       var vf2 = await sb.from("vacuum_floors").select("*").order("sort_order"); if (!vf2.error) vacuumFloors = vf2.data || [];
-      var vac2 = await sb.from("vacuums").select("*").order("floor_code").order("model"); if (!vac2.error) vacuums = vac2.data || [];
+      var vac2 = await reloadNoImage("vacuums", [["floor_code"], ["model"]]); if (vac2) vacuums = vac2;
     } else {
       var tc = await sb.from("tool_categories").select("*").order("sort_order"); if (!tc.error) toolCategories = tc.data || [];
-      var t = await sb.from("tools").select("*").order("sort_order"); if (!t.error) tools = t.data || [];
+      var t = await reloadNoImage("tools", [["sort_order"]]); if (t) tools = t;
     }
     render();
   } else { errEl.textContent = friendlyError(res.error); errEl.style.display = "block"; }
